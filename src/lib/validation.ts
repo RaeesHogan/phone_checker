@@ -1,24 +1,38 @@
-import { z } from "zod";
+import { z } from 'zod';
 
-export const phoneSchema = z
-  .string()
-  .min(10, "เบอร์โทรศัพท์ต้องมีอย่างน้อย 10 หลัก")
-  .max(15, "เบอร์โทรศัพท์ยาวเกินไป")
-  .refine((val) => /^[0-9+-\s]+$/.test(val), "เบอร์โทรศัพท์ต้องประกอบด้วยตัวเลขเท่านั้น");
-
+/**
+ * Reservation Creation/Update Schema
+ */
 export const reservationSchema = z.object({
-  customerName: z.string().min(2, "ชื่อลูกค้าต้องมีอย่างน้อย 2 ตัวอักษร"),
-  phoneNumber: phoneSchema,
-  address: z.string().min(5, "กรุณากรอกที่อยู่ที่ชัดเจน"),
-  productCode: z.string().min(1, "กรุณากรอกรหัสสินค้า"),
+  customerName: z.string().min(2, 'Customer name is too short'),
+  phoneNumber: z.string().regex(/^0[689]\d{8}$/, 'Invalid Thai phone number format'),
+  address: z.string().min(5, 'Address is too short'),
+  productCode: z.string().min(1, 'Product code is required'),
   notes: z.string().optional(),
 });
 
-export type ReservationInput = z.infer<typeof reservationSchema>;
-
-export const loginSchema = z.object({
-  username: z.string().min(3, "Username ต้องมีอย่างน้อย 3 ตัวอักษร"),
-  password: z.string().min(6, "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร"),
+/**
+ * User Creation/Update Schema
+ */
+export const userSchema = z.object({
+  username: z.string().min(3, 'Username must be at least 3 characters'),
+  password: z.string().min(6, 'Password must be at least 6 characters').optional(),
+  fullName: z.string().min(2, 'Full name is required'),
+  role: z.enum(['ADMIN', 'USER']),
+  active: z.boolean().default(true),
 });
 
-export type LoginInput = z.infer<typeof loginSchema>;
+/**
+ * Login Schema
+ */
+export const loginSchema = z.object({
+  username: z.string().min(1, 'Username is required'),
+  password: z.string().min(1, 'Password is required'),
+});
+
+/**
+ * Public Search Schema
+ */
+export const searchSchema = z.object({
+  phoneNumber: z.string().min(1, 'Phone number is required'),
+});

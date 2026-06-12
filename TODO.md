@@ -8,14 +8,14 @@
 
 ## 2. Database Layer
 - [x] Define Prisma Schema (`schema.prisma`)
-- [ ] Run initial migration
-- [ ] Apply SQL Partial Unique Index
-- [ ] Implement Seed Script (`seed.ts`)
+- [x] Run initial migration
+- [x] Apply SQL Partial Unique Index
+- [x] Implement Seed Script (`seed.ts`)
 
 ## 3. Core Utilities & Shared Logic
-- [ ] Implement Phone Normalization Utility
-- [ ] Setup Zod Validation Schemas
-- [ ] Setup Structured Logger
+- [x] Implement Phone Normalization Utility
+- [x] Setup Zod Validation Schemas
+- [x] Setup Structured Logger
 
 ## 4. Authentication
 - [ ] Configure Auth.js (NextAuth v5)
