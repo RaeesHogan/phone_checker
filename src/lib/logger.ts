@@ -43,7 +43,7 @@ export const logger = {
     });
   },
 
-  private log(payload: LogPayload) {
+  log(payload: LogPayload) {
     const logEntry = {
       timestamp: new Date().toISOString(),
       ...payload,
