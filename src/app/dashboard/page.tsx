@@ -28,22 +28,24 @@ function DashboardContent() {
   const [initialPhone, setInitialPhone] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(true);
 
+  // Fetch Stats and Data
+  const fetchData = async () => {
+    if (status !== "authenticated") return;
+    
+    try {
+      const res = await fetch("/api/dashboard/data");
+      const data = await res.json();
+      if (data.stats) setStats(data.stats);
+      if (data.recent) setRecentReservations(data.recent);
+    } catch (error) {
+      console.error("Failed to fetch dashboard data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Fetch Stats and Data on mount
   useEffect(() => {
-    async function fetchData() {
-      if (status !== "authenticated") return;
-      
-      try {
-        const res = await fetch("/api/dashboard/data");
-        const data = await res.json();
-        if (data.stats) setStats(data.stats);
-        if (data.recent) setRecentReservations(data.recent);
-      } catch (error) {
-        console.error("Failed to fetch dashboard data");
-      } finally {
-        setLoading(false);
-      }
-    }
     fetchData();
   }, [status]);
 
@@ -176,7 +178,7 @@ function DashboardContent() {
               <h2 className="text-lg font-black text-slate-800 tracking-tight">เพิ่มการจองใหม่</h2>
               <p className="text-sm font-medium text-slate-500">กรอกข้อมูลลูกค้าและเบอร์โทรศัพท์เพื่อทำการจอง</p>
             </div>
-            <ReservationForm initialPhone={initialPhone} />
+            <ReservationForm initialPhone={initialPhone} onSuccess={fetchData} />
           </div>
         </div>
       </main>

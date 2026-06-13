@@ -6,7 +6,7 @@ import { User, Phone, MapPin, Tag, FileText, Send, Loader2, CheckCircle2, AlertC
 import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
 
-export default function ReservationForm({ initialPhone }: { initialPhone?: string }) {
+export default function ReservationForm({ initialPhone, onSuccess }: { initialPhone?: string, onSuccess?: () => void }) {
   const [loading, setLoading] = useState(false);
   const [phone, setPhone] = useState(initialPhone || "");
   const formRef = useRef<HTMLFormElement>(null);
@@ -38,6 +38,7 @@ export default function ReservationForm({ initialPhone }: { initialPhone?: strin
       formRef.current?.reset();
       setPhone("");
       toast.success("บันทึกการจองสำเร็จแล้ว");
+      if (onSuccess) onSuccess();
       setLoading(false);
     }
   };
