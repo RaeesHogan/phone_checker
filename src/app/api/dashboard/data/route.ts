@@ -17,8 +17,16 @@ export async function GET(req: NextRequest) {
 
     const recent = await prisma.reservation.findMany({
       where: { status: "ACTIVE" },
-      orderBy: { createdAt: "desc" },
-      take: 10,
+      include: {
+        user: {
+          select: {
+            fullName: true,
+            username: true,
+          }
+        }
+      },
+      orderBy: { expirationDate: "asc" },
+      take: 20,
     });
 
     return NextResponse.json({
