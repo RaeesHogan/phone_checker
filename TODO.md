@@ -18,26 +18,28 @@
 - [x] Setup Structured Logger
 
 ## 4. Authentication
-- [ ] Configure Auth.js (NextAuth v5)
-- [ ] Implement Login Page UI
-- [ ] Setup Authentication Middleware (RBAC)
+- [x] Configure Auth.js (NextAuth v5)
+- [x] Implement Login Page UI
+- [x] Setup Authentication Middleware (RBAC)
 
 ## 5. Public Features
-- [ ] Implement Public Search API Route
-- [ ] Implement Home Page (Public Search UI)
+- [x] Implement Public Search API Route
+- [x] Implement Home Page (Public Search UI)
+- [x] Implement 10-digit Auto-search & History
 
 ## 6. Staff/Authenticated Features
-- [ ] Implement Dashboard Layout & Navigation
-- [ ] Implement Reservation CRUD Server Actions
-- [ ] Implement Reservation Form UI
-- [ ] Implement "My Reservations" Page
+- [x] Implement Dashboard Layout & Navigation
+- [x] Implement Reservation CRUD Server Actions
+- [x] Implement Reservation Form UI (with Auto-fill)
+- [x] Implement Dashboard Search Widget
 
 ## 7. Admin Features
-- [ ] Implement Admin Dashboard Overview
-- [ ] Implement User Management (Admin only)
-- [ ] Implement Logs Viewer (Audit & System)
-- [ ] Implement Excel Export Service
+- [x] Implement Admin Dashboard Overview
+- [x] Implement User Management (Edit, Reset, Toggle, Delete)
+- [x] Implement Logs Viewer (Audit & System)
+- [x] Implement Excel Export Service
+- [x] Implement System Settings UI
 
 ## 8. Background Jobs
-- [ ] Implement Auto-Expiration Cron Job Route
-- [ ] Configure `vercel.json` for Cron Jobs
+- [x] Implement Auto-Expiration Cron Job Route
+- [x] Configure `vercel.json` for Cron Jobs
