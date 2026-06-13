@@ -109,12 +109,6 @@ export default function LoginPage() {
             </button>
           </form>
         </div>
-
-        <div className="text-center">
-          <a href="/" className="text-sm font-semibold text-slate-400 hover:text-blue-600 transition-colors">
-            ← กลับไปหน้าตรวจสอบเบอร์
-          </a>
-        </div>
       </div>
     </div>
   );

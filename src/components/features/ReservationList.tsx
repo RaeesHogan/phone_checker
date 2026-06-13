@@ -8,16 +8,21 @@ import { useSession } from "next-auth/react";
 
 interface ReservationListProps {
   reservations: any[];
+  onSuccess?: () => void;
 }
 
-export default function ReservationList({ reservations }: ReservationListProps) {
+export default function ReservationList({ reservations, onSuccess }: ReservationListProps) {
   const { data: session } = useSession();
   const isAdmin = (session?.user as any)?.role === "ADMIN";
 
   const handleCancel = async (id: string) => {
     if (confirm("ยืนยันการยกเลิกการจองนี้? ระบบจะไม่สามารถกู้คืนสถานะ Active ได้")) {
       const result = await cancelReservation(id);
-      if (result.error) alert(result.error);
+      if (result.error) {
+        alert(result.error);
+      } else {
+        if (onSuccess) onSuccess();
+      }
     }
   };
 

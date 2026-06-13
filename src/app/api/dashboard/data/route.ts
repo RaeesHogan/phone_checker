@@ -9,10 +9,11 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const [total, active, expired] = await Promise.all([
+    const [total, active, expired, cancelled] = await Promise.all([
       prisma.reservation.count(),
       prisma.reservation.count({ where: { status: "ACTIVE" } }),
       prisma.reservation.count({ where: { status: "EXPIRED" } }),
+      prisma.reservation.count({ where: { status: "CANCELLED" } }),
     ]);
 
     const recent = await prisma.reservation.findMany({
@@ -30,7 +31,11 @@ export async function GET(req: NextRequest) {
     });
 
     return NextResponse.json({
-      stats: { total, active, expired },
+      stats: { 
+        total: active + expired, // Show total relevant (non-cancelled) or just total? 
+        active, 
+        expired 
+      },
       recent
     });
   } catch (error) {

@@ -169,7 +169,7 @@ function DashboardContent() {
                 LIVE STATUS
               </div>
             </div>
-            <ReservationList reservations={recentReservations} />
+            <ReservationList reservations={recentReservations} onSuccess={fetchData} />
           </div>
 
           {/* New Reservation Form - NOW BELOW */}
