@@ -22,13 +22,27 @@ export async function GET(req: NextRequest) {
   try {
     const now = new Date();
 
-    const [total, active, cancelled] = await Promise.all([
+    const [total, active, expired, cancelled] = await Promise.all([
       prisma.reservation.count({ where: baseFilter }),
+      // Active = status ACTIVE and not yet expired
       prisma.reservation.count({
         where: {
           ...baseFilter,
           status: "ACTIVE",
           expirationDate: { gt: now }
+        }
+      }),
+      // Expired = status EXPIRED in DB, OR status ACTIVE but past expiry date
+      prisma.reservation.count({
+        where: {
+          ...baseFilter,
+          OR: [
+            { status: "EXPIRED" },
+            {
+              status: "ACTIVE",
+              expirationDate: { lte: now }
+            }
+          ]
         }
       }),
       prisma.reservation.count({
@@ -38,8 +52,6 @@ export async function GET(req: NextRequest) {
         }
       }),
     ]);
-
-    const expired = total - active - cancelled;
 
     const recent = await prisma.reservation.findMany({
       where: {
