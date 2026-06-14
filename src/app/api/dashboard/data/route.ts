@@ -22,9 +22,15 @@ export async function GET(req: NextRequest) {
   try {
     const now = new Date();
 
-    const [total, active, expired, cancelled] = await Promise.all([
-      prisma.reservation.count({ where: baseFilter }),
-      // Active = status ACTIVE and not yet expired
+    const [total, active, expired] = await Promise.all([
+      // Total = active + expired (ไม่รวม CANCELLED เพราะถูกยกเลิกแล้ว)
+      prisma.reservation.count({
+        where: {
+          ...baseFilter,
+          status: { not: "CANCELLED" }
+        }
+      }),
+      // Active = status ACTIVE และยังไม่หมดอายุ
       prisma.reservation.count({
         where: {
           ...baseFilter,
@@ -32,7 +38,7 @@ export async function GET(req: NextRequest) {
           expirationDate: { gt: now }
         }
       }),
-      // Expired = status EXPIRED in DB, OR status ACTIVE but past expiry date
+      // Expired = status EXPIRED ใน DB หรือ status ACTIVE แต่เลยวันหมดอายุแล้ว
       prisma.reservation.count({
         where: {
           ...baseFilter,
@@ -43,12 +49,6 @@ export async function GET(req: NextRequest) {
               expirationDate: { lte: now }
             }
           ]
-        }
-      }),
-      prisma.reservation.count({
-        where: {
-          ...baseFilter,
-          status: "CANCELLED"
         }
       }),
     ]);
