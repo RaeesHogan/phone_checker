@@ -10,24 +10,40 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const userId = (session.user as any).id;
+  const userRole = (session.user as any).role;
+  const isAdmin = userRole === "ADMIN";
+
+  const baseFilter: any = {};
+  if (!isAdmin) {
+    baseFilter.createdBy = userId;
+  }
+
   try {
     const now = new Date();
 
     const [total, active, cancelled] = await Promise.all([
-      prisma.reservation.count(),
+      prisma.reservation.count({ where: baseFilter }),
       prisma.reservation.count({
         where: {
+          ...baseFilter,
           status: "ACTIVE",
           expirationDate: { gt: now }
         }
       }),
-      prisma.reservation.count({ where: { status: "CANCELLED" } }),
+      prisma.reservation.count({
+        where: {
+          ...baseFilter,
+          status: "CANCELLED"
+        }
+      }),
     ]);
 
     const expired = total - active - cancelled;
 
     const recent = await prisma.reservation.findMany({
       where: {
+        ...baseFilter,
         status: "ACTIVE",
         expirationDate: { gt: now }
       },
