@@ -17,6 +17,9 @@ export async function GET(req: NextRequest) {
       where: {
         phoneNumber: normalized,
         status: "ACTIVE",
+        expirationDate: {
+          gt: new Date(),
+        },
       },
       select: {
         status: true,

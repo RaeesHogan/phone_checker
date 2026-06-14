@@ -34,6 +34,9 @@ export async function createReservation(formData: FormData) {
       where: {
         phoneNumber: normalizedPhone,
         status: "ACTIVE",
+        expirationDate: {
+          gt: new Date(),
+        },
       },
     });
 

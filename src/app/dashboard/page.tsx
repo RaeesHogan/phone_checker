@@ -33,7 +33,7 @@ function DashboardContent() {
     if (status !== "authenticated") return;
     
     try {
-      const res = await fetch("/api/dashboard/data");
+      const res = await fetch("/api/dashboard/data", { cache: "no-store" });
       const data = await res.json();
       if (data.stats) setStats(data.stats);
       if (data.recent) setRecentReservations(data.recent);

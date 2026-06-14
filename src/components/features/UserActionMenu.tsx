@@ -205,8 +205,8 @@ export default function UserActionMenu({ user }: { user: any }) {
                     <button onClick={() => setModalType(null)} className="flex-1 py-4 bg-slate-100 text-slate-600 font-bold rounded-2xl hover:bg-slate-200 transition-all">
                       ยกเลิก
                     </button>
-                    <button onClick={handleDelete} disabled={loading} className="flex-1 py-4 bg-red-600 text-white font-black rounded-2xl hover:bg-red-700 transition-all shadow-lg shadow-red-600/20">
-                      {loading ? <Loader2 className="animate-spin" /> : "ยืนยันการลบ"}
+                    <button onClick={handleDelete} disabled={loading} className="flex-1 flex items-center justify-center gap-2 py-4 bg-red-600 text-white font-black rounded-2xl hover:bg-red-700 transition-all shadow-lg shadow-red-600/20">
+                      {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "ยืนยันการลบ"}
                     </button>
                   </div>
                 </div>
