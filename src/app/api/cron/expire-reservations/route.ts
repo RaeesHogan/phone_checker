@@ -40,16 +40,21 @@ export async function GET(req: NextRequest) {
     });
   } catch (error: any) {
     console.error("Cron Job Error:", error);
-    
-    // Log error to database
-    await prisma.systemLog.create({
-      data: {
-        level: "ERROR",
-        source: "CRON_JOB_EXPIRATION",
-        message: error.message || "Unknown error during cron job execution",
-        stackTrace: error.stack,
-      },
-    });
+
+    // Attempt to log error to DB — nested try/catch prevents double-failure
+    // if DB itself is the cause of the original error
+    try {
+      await prisma.systemLog.create({
+        data: {
+          level: "ERROR",
+          source: "CRON_JOB_EXPIRATION",
+          message: error.message || "Unknown error during cron job execution",
+          stackTrace: error.stack,
+        },
+      });
+    } catch (logError) {
+      console.error("Cron Job: Failed to write error log to DB:", logError);
+    }
 
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }

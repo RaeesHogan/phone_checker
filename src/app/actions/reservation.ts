@@ -12,16 +12,22 @@ export async function createReservation(formData: FormData) {
     return { error: "กรุณาเข้าสู่ระบบก่อนดำเนินการ" };
   }
 
-  const customerName = formData.get("customerName") as string;
-  const rawPhone = formData.get("phoneNumber") as string;
-  const address = formData.get("address") as string;
-  const productCode = formData.get("productCode") as string;
-  const notes = formData.get("notes") as string;
+  const customerName = (formData.get("customerName") as string)?.trim();
+  const rawPhone = (formData.get("phoneNumber") as string)?.trim();
+  const address = (formData.get("address") as string)?.trim();
+  const productCode = (formData.get("productCode") as string)?.trim();
+  const notes = (formData.get("notes") as string)?.trim() || null;
 
-  // 1. Validate
+  // 1. Validate required fields
   if (!customerName || !rawPhone || !address || !productCode) {
     return { error: "กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน" };
   }
+
+  // 2. Max-length guards
+  if (customerName.length > 100) return { error: "ชื่อลูกค้ายาวเกินไป (max 100 ตัวอักษร)" };
+  if (address.length > 300) return { error: "ที่อยู่ยาวเกินไป (max 300 ตัวอักษร)" };
+  if (productCode.length > 50) return { error: "รหัสสินค้ายาวเกินไป (max 50 ตัวอักษร)" };
+  if (notes && notes.length > 500) return { error: "หมายเหตุยาวเกินไป (max 500 ตัวอักษร)" };
 
   const normalizedPhone = normalizePhoneNumber(rawPhone);
   if (!isValidThaiPhone(normalizedPhone)) {

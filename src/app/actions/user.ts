@@ -81,6 +81,11 @@ export async function updateUserSettings(userId: string, formData: FormData) {
   const fullName = formData.get("fullName") as string;
   const role = formData.get("role") as Role;
 
+  // Validate role enum value
+  if (!Object.values(Role).includes(role)) {
+    return { error: "ค่า Role ไม่ถูกต้อง" };
+  }
+
   try {
     await prisma.user.update({
       where: { id: userId },
@@ -134,6 +139,11 @@ export async function toggleUserStatus(userId: string, currentStatus: boolean) {
   const session = await auth();
   if (!session || (session.user as any).role !== "ADMIN") return { error: "Unauthorized" };
 
+  // Prevent admin from deactivating their own account
+  if (userId === (session.user as any).id) {
+    return { error: "ไม่สามารถเปลี่ยนสถานะบัญชีของตัวเองได้" };
+  }
+
   try {
     await prisma.user.update({
       where: { id: userId },
@@ -158,6 +168,11 @@ export async function toggleUserStatus(userId: string, currentStatus: boolean) {
 export async function deleteUser(userId: string) {
   const session = await auth();
   if (!session || (session.user as any).role !== "ADMIN") return { error: "Unauthorized" };
+
+  // Prevent admin from deleting their own account
+  if (userId === (session.user as any).id) {
+    return { error: "ไม่สามารถลบบัญชีของตัวเองได้" };
+  }
 
   try {
     // Check if user has reservations before deleting (prevent FK constraint error)
