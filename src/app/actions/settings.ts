@@ -13,6 +13,18 @@ export async function updateSettings(formData: FormData) {
   const expireDays = formData.get("RESERVATION_EXPIRE_DAYS") as string;
   const sessionTimeout = formData.get("SESSION_TIMEOUT_HOURS") as string;
 
+  // Validate: expireDays must be a number between 1-365
+  const parsedDays = parseInt(expireDays);
+  if (!expireDays || isNaN(parsedDays) || parsedDays < 1 || parsedDays > 365) {
+    return { error: "จำนวนวันหมดอายุต้องอยู่ระหว่าง 1-365 วัน" };
+  }
+
+  // Validate: sessionTimeout must be a number between 1-720 (30 days max)
+  const parsedTimeout = parseInt(sessionTimeout);
+  if (!sessionTimeout || isNaN(parsedTimeout) || parsedTimeout < 1 || parsedTimeout > 720) {
+    return { error: "Session timeout ต้องอยู่ระหว่าง 1-720 ชั่วโมง" };
+  }
+
   try {
     // Update or Create settings
     const settings = [

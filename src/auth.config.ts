@@ -25,4 +25,5 @@ export const authConfig = {
   providers: [], // Providers are defined in auth.ts (non-edge)
 } satisfies NextAuthConfig;
 
-export const { auth, handlers } = NextAuth(authConfig);
+// Edge-safe instance — used by middleware.ts ONLY
+export const { auth } = NextAuth(authConfig);

@@ -29,8 +29,8 @@ export async function createUser(formData: FormData) {
     return { error: "ชื่อผู้ใช้ใช้ได้เฉพาะตัวอักษรภาษาอังกฤษ ตัวเลข และ _" };
   }
 
-  if (password.length < 8) {
-    return { error: "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร" };
+  if (password.length < 1) {
+    return { error: "กรุณากรอกรหัสผ่าน" };
   }
 
   try {
@@ -112,7 +112,7 @@ export async function resetUserPassword(userId: string, formData: FormData) {
   if (!session || (session.user as any).role !== "ADMIN") return { error: "Unauthorized" };
 
   const newPassword = formData.get("password") as string;
-  if (!newPassword || newPassword.length < 8) return { error: "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร" };
+  if (!newPassword || newPassword.length < 1) return { error: "กรุณากรอกรหัสผ่าน" };
 
   try {
     const passwordHash = await argon2.hash(newPassword);

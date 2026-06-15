@@ -11,8 +11,9 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    // 2. Fetch Data
+    // 2. Fetch Data (hard-limited to 10,000 rows to prevent OOM on large datasets)
     const reservations = await prisma.reservation.findMany({
+      take: 10000,
       include: {
         user: {
           select: { fullName: true }
