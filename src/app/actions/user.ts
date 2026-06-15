@@ -21,6 +21,18 @@ export async function createUser(formData: FormData) {
     return { error: "กรุณากรอกข้อมูลให้ครบถ้วน" };
   }
 
+  if (username.length < 3 || username.length > 50) {
+    return { error: "ชื่อผู้ใช้ต้องมี 3-50 ตัวอักษร" };
+  }
+
+  if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+    return { error: "ชื่อผู้ใช้ใช้ได้เฉพาะตัวอักษรภาษาอังกฤษ ตัวเลข และ _" };
+  }
+
+  if (password.length < 8) {
+    return { error: "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร" };
+  }
+
   try {
     // Check if user exists
     const existing = await prisma.user.findUnique({
@@ -95,7 +107,7 @@ export async function resetUserPassword(userId: string, formData: FormData) {
   if (!session || (session.user as any).role !== "ADMIN") return { error: "Unauthorized" };
 
   const newPassword = formData.get("password") as string;
-  if (!newPassword || newPassword.length < 1) return { error: "รหัสผ่านสั้นเกินไป" };
+  if (!newPassword || newPassword.length < 8) return { error: "รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร" };
 
   try {
     const passwordHash = await argon2.hash(newPassword);
