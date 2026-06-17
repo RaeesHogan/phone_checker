@@ -4,6 +4,7 @@ import { signOut, useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import ReservationForm from "@/components/forms/ReservationForm";
 import ReservationList from "@/components/features/ReservationList";
+import DashboardSearch from "@/components/features/DashboardSearch";
 import { 
   LayoutDashboard, 
   Users, 
@@ -118,6 +119,11 @@ function DashboardContent() {
             </Link>
           </div>
         )}
+
+        {/* Search Section */}
+        <div className="mb-8">
+          <DashboardSearch onSelectFreeNumber={(phone) => setInitialPhone(phone)} />
+        </div>
 
         {/* Stats Row */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
