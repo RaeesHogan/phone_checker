@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Sarabun } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
+import { Analytics } from '@vercel/analytics/next';
 
 const sarabun = Sarabun({ 
   weight: ["400", "500", "600", "700"],
@@ -22,6 +23,7 @@ export default function RootLayout({
     <html lang="th" suppressHydrationWarning>
       <body className={sarabun.className}>
         <Providers>{children}</Providers>
+        <Analytics />
       </body>
     </html>
   );
