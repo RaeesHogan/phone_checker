@@ -48,7 +48,6 @@ model ReservationItem {
   reservationId String
   productCode   String
   phoneNumber   String      // Added for strict main product locking index
-  status        Status      @default(ACTIVE) // Synced from Reservation for partial unique index
   quantity      Int         @default(1)
   isMainProduct Boolean     @default(false)
   createdAt     DateTime    @default(now())
@@ -58,7 +57,6 @@ model ReservationItem {
   @@index([productCode])
   @@index([reservationId])
   @@index([phoneNumber])
-  @@index([status])
 }
 
 model AuditLog {

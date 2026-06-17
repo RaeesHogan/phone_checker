@@ -6,17 +6,36 @@ import { User, Phone, MapPin, Tag, FileText, Send, Loader2, Plus, Trash2, Dollar
 import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
 
-export default function ReservationForm({ initialPhone, onSuccess }: { initialPhone?: string, onSuccess?: () => void }) {
+export default function ReservationForm({ 
+  initialPhone, 
+  hasMainProduct = false,
+  onSuccess 
+}: { 
+  initialPhone?: string, 
+  hasMainProduct?: boolean,
+  onSuccess?: () => void 
+}) {
   const [loading, setLoading] = useState(false);
   const [phone, setPhone] = useState(initialPhone || "");
-  const [items, setItems] = useState([{ productCode: "", quantity: 1, isMainProduct: true }]);
+  const [items, setItems] = useState([{ 
+    productCode: "", 
+    quantity: 1, 
+    isMainProduct: !hasMainProduct // Default to true ONLY if no main product exists
+  }]);
   const [totalPrice, setTotalPrice] = useState<number>(0);
   const formRef = useRef<HTMLFormElement>(null);
 
   // Sync state if initialPhone changes
   useEffect(() => {
-    if (initialPhone) setPhone(initialPhone);
-  }, [initialPhone]);
+    if (initialPhone) {
+      setPhone(initialPhone);
+      setItems([{ 
+        productCode: "", 
+        quantity: 1, 
+        isMainProduct: !hasMainProduct 
+      }]);
+    }
+  }, [initialPhone, hasMainProduct]);
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, "").slice(0, 10);
@@ -196,8 +215,12 @@ export default function ReservationForm({ initialPhone, onSuccess }: { initialPh
                     <input
                       type="radio"
                       checked={item.isMainProduct}
+                      disabled={hasMainProduct}
                       onChange={() => updateItem(index, "isMainProduct", true)}
-                      className="w-5 h-5 accent-blue-600 cursor-pointer"
+                      className={cn(
+                        "w-5 h-5 accent-blue-600",
+                        hasMainProduct ? "cursor-not-allowed opacity-30" : "cursor-pointer"
+                      )}
                     />
                   </div>
                 </div>

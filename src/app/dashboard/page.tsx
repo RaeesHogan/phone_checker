@@ -14,7 +14,8 @@ import {
   ShieldCheck, 
   ChevronRight,
   Loader2,
-  ListFilter
+  ListFilter,
+  Search
 } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect, Suspense } from "react";
@@ -120,46 +121,50 @@ function DashboardContent() {
           </div>
         )}
 
-        {/* Search Section */}
-        <div className="mb-8">
-          <DashboardSearch onSelectFreeNumber={(phone) => setInitialPhone(phone)} />
-        </div>
-
-        {/* Stats Row */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">การจองทั้งหมด</p>
-              <div className="p-2 bg-slate-50 rounded-lg text-slate-400">
-                <History className="w-4 h-4" />
+        {/* Quick Actions Row */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          {/* Main Action: Check Number */}
+          <Link 
+            href="/dashboard/search"
+            className="group relative bg-slate-900 rounded-3xl p-8 overflow-hidden transition-all hover:scale-[1.02] active:scale-[0.98] shadow-2xl shadow-slate-900/20 border border-white/5"
+          >
+            <div className="relative z-10 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="bg-blue-600 p-4 rounded-2xl shadow-xl shadow-blue-600/40 text-white">
+                  <Search className="w-8 h-8" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-black text-white tracking-tight">เช็คเบอร์ / จองสินค้า</h3>
+                  <p className="text-slate-400 text-sm font-medium mt-1">ตรวจสอบสิทธิ์และสร้างการจองใหม่</p>
+                </div>
               </div>
+              <ChevronRight className="w-8 h-8 text-slate-700 group-hover:text-blue-400 group-hover:translate-x-2 transition-all" />
             </div>
-            <h2 className="text-3xl font-black text-slate-900 tracking-tight">{stats.total.toLocaleString()}</h2>
-          </div>
+            {/* Decoration */}
+            <div className="absolute -right-8 -bottom-8 bg-blue-600/10 w-40 h-40 rounded-full blur-3xl group-hover:bg-blue-600/20 transition-colors" />
+          </Link>
 
-          <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs font-bold text-emerald-600 uppercase tracking-widest">กำลังใช้งาน</p>
-              <div className="p-2 bg-emerald-50 rounded-lg text-emerald-400">
-                <Clock className="w-4 h-4" />
-              </div>
+          {/* Secondary Action: Stats Recap */}
+          <div className="bg-white rounded-3xl p-8 border border-slate-200 flex items-center justify-around">
+            <div className="text-center">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Active</p>
+              <p className="text-3xl font-black text-emerald-600 tracking-tighter">{stats.active}</p>
             </div>
-            <h2 className="text-3xl font-black text-emerald-600 tracking-tight">{stats.active.toLocaleString()}</h2>
-          </div>
-
-          <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">หมดอายุ</p>
-              <div className="p-2 bg-slate-50 rounded-lg text-slate-300">
-                <History className="w-4 h-4 opacity-50" />
-              </div>
+            <div className="w-[1px] h-12 bg-slate-100" />
+            <div className="text-center">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total</p>
+              <p className="text-3xl font-black text-slate-900 tracking-tighter">{stats.total}</p>
             </div>
-            <h2 className="text-3xl font-black text-slate-400 tracking-tight">{stats.expired.toLocaleString()}</h2>
+            <div className="w-[1px] h-12 bg-slate-100" />
+            <div className="text-center">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Expired</p>
+              <p className="text-3xl font-black text-slate-300 tracking-tighter">{stats.expired}</p>
+            </div>
           </div>
         </div>
 
         <div className="space-y-8">
-          {/* Reservation List - NOW ON TOP */}
+          {/* Reservation List */}
           <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden min-h-[400px]">
             <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-white">
               <div className="flex items-center gap-3">
@@ -176,15 +181,6 @@ function DashboardContent() {
               </div>
             </div>
             <ReservationList reservations={recentReservations} onSuccess={fetchData} />
-          </div>
-
-          {/* New Reservation Form - NOW BELOW */}
-          <div className="max-w-3xl mx-auto w-full">
-            <div className="mb-4 px-2">
-              <h2 className="text-lg font-black text-slate-800 tracking-tight">เพิ่มการจองใหม่</h2>
-              <p className="text-sm font-medium text-slate-500">กรอกข้อมูลลูกค้าและเบอร์โทรศัพท์เพื่อทำการจอง</p>
-            </div>
-            <ReservationForm initialPhone={initialPhone} onSuccess={fetchData} />
           </div>
         </div>
       </main>

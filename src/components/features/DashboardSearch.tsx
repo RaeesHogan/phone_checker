@@ -1,15 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, Phone, CheckCircle2, Lock, ArrowRight, Loader2, Clock, AlertTriangle, CheckSquare, Square } from "lucide-react";
+import { Search, Phone, CheckCircle2, Lock, ArrowRight, Loader2, Clock, AlertTriangle, CheckSquare, Square, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
 
 interface DashboardSearchProps {
-  onSelectFreeNumber: (phone: string) => void;
+  onSelectPhone: (phone: string, hasMainProduct: boolean) => void;
 }
 
-export default function DashboardSearch({ onSelectFreeNumber }: DashboardSearchProps) {
+export default function DashboardSearch({ onSelectPhone }: DashboardSearchProps) {
   const [phone, setPhone] = useState("");
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -70,15 +70,15 @@ export default function DashboardSearch({ onSelectFreeNumber }: DashboardSearchP
   };
 
   return (
-    <div className="bg-slate-900 rounded-[2.5rem] p-8 shadow-2xl shadow-slate-900/40 text-white overflow-hidden relative group border border-white/5">
+    <div className="bg-slate-900 rounded-[2.5rem] p-8 shadow-2xl shadow-slate-900/40 text-white overflow-hidden relative group border border-white/5 max-w-2xl mx-auto">
       <div className="relative z-10">
         <div className="flex items-center gap-3 mb-8">
           <div className="bg-blue-500 p-2.5 rounded-2xl shadow-lg shadow-blue-500/20 text-white">
             <Search className="w-6 h-6" />
           </div>
           <div>
-            <h2 className="text-2xl font-black tracking-tight">เช็คเบอร์ลูกค้า</h2>
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest opacity-60">Verification Terminal</p>
+            <h2 className="text-2xl font-black tracking-tight">ระบบตรวจสอบสิทธิ์เบอร์</h2>
+            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest opacity-60">Number Verification</p>
           </div>
         </div>
 
@@ -101,7 +101,7 @@ export default function DashboardSearch({ onSelectFreeNumber }: DashboardSearchP
             )}
           </div>
 
-          {/* History in Dashboard Search */}
+          {/* History */}
           {history.length > 0 && !result && !loading && (
             <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-500">
               <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2 ml-1">
@@ -135,10 +135,10 @@ export default function DashboardSearch({ onSelectFreeNumber }: DashboardSearchP
                   </div>
                 </div>
                 <button 
-                  onClick={() => onSelectFreeNumber(phone)}
+                  onClick={() => onSelectPhone(phone, false)}
                   className="group flex items-center gap-2 px-5 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-black transition-all active:scale-95 shadow-xl shadow-emerald-900/40"
                 >
-                  <span>ดึงไปจอง</span>
+                  <span>สร้างการจองใหม่</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </button>
               </div>
@@ -151,11 +151,21 @@ export default function DashboardSearch({ onSelectFreeNumber }: DashboardSearchP
                     <AlertTriangle className="w-6 h-6 text-red-400" />
                   </div>
                   <div className="flex-1">
-                    <p className="font-black text-lg tracking-tight text-red-400">เบอร์นี้มีสินค้าที่ถูกล็อคแล้ว</p>
+                    <p className="font-black text-lg tracking-tight text-red-400">รายการสินค้าที่ถูกล็อคแล้ว</p>
                     <div className="mt-2 flex flex-wrap gap-1.5">
-                      {result.lockedProductCodes.map((code: string) => (
-                        <span key={code} className="px-2 py-0.5 bg-red-500/20 text-red-300 rounded-md text-[10px] font-bold border border-red-500/30">
-                          • {code}
+                      {result.lockedItems.map((item: any) => (
+                        <span 
+                          key={item.productCode} 
+                          className={cn(
+                            "px-2 py-0.5 rounded-md text-[10px] font-bold border flex items-center gap-1",
+                            item.isMainProduct 
+                              ? "bg-amber-500/20 text-amber-300 border-amber-500/30" 
+                              : "bg-red-500/20 text-red-300 border-red-500/30"
+                          )}
+                        >
+                          {item.isMainProduct && <Star className="w-3 h-3 fill-amber-300" />}
+                          {item.productCode}
+                          {item.isMainProduct && <span className="text-[9px] opacity-70 ml-0.5">(หลัก)</span>}
                         </span>
                       ))}
                     </div>
@@ -174,14 +184,14 @@ export default function DashboardSearch({ onSelectFreeNumber }: DashboardSearchP
                       {acceptedTerms ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
                     </div>
                     <p className="text-[11px] font-bold text-slate-400 leading-relaxed">
-                      ฉันเข้าใจและยอมรับเงื่อนไข (ห้ามขายสินค้าที่ถูกล็อคซ้ำ แต่สามารถจองสินค้าอื่นเพิ่มได้)
+                      ฉันเข้าใจและยอมรับเงื่อนไข (ห้ามขายสินค้าที่ถูกล็อคซ้ำ {result.hasMainProduct && ", ห้ามเพิ่มสินค้าหลักซ้ำ"})
                     </p>
                   </button>
                 </div>
 
                 <button 
                   disabled={!acceptedTerms}
-                  onClick={() => onSelectFreeNumber(phone)}
+                  onClick={() => onSelectPhone(phone, result.hasMainProduct)}
                   className="w-full flex items-center justify-center gap-2 py-3 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-600 text-white rounded-xl text-sm font-black transition-all active:scale-95 shadow-lg shadow-blue-900/20"
                 >
                   <span>ดำเนินการจองสินค้าอื่น</span>
