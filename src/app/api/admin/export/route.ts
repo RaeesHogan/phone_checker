@@ -17,6 +17,9 @@ export async function GET(req: NextRequest) {
       include: {
         user: {
           select: { fullName: true }
+        },
+        items: {
+          select: { productCode: true }
         }
       },
       orderBy: { createdAt: "desc" }
@@ -30,7 +33,7 @@ export async function GET(req: NextRequest) {
       { header: "ID", key: "id", width: 10 },
       { header: "ชื่อลูกค้า", key: "customerName", width: 20 },
       { header: "เบอร์โทรศัพท์", key: "phoneNumber", width: 15 },
-      { header: "สินค้า/รหัส", key: "productCode", width: 15 },
+      { header: "สินค้า/รหัส", key: "productCode", width: 30 },
       { header: "ที่อยู่", key: "address", width: 30 },
       { header: "สถานะ", key: "status", width: 12 },
       { header: "วันที่จอง", key: "reservationDate", width: 20 },
@@ -49,11 +52,13 @@ export async function GET(req: NextRequest) {
 
     // 4. Add Rows
     reservations.forEach((r) => {
+      const productCodes = r.items.map(item => item.productCode).join(", ");
+      
       worksheet.addRow({
         id: r.id.substring(0, 8),
         customerName: r.customerName,
         phoneNumber: r.phoneNumber,
-        productCode: r.productCode,
+        productCode: productCodes,
         address: r.address,
         status: r.status,
         reservationDate: r.reservationDate.toLocaleString("th-TH"),
