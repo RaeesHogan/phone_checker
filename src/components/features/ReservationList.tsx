@@ -151,7 +151,9 @@ export default function ReservationList({ reservations, onSuccess }: Reservation
                 const isNearExpiry = daysRemaining <= 3;
                 const isExpired = daysRemaining < 0;
 
-                const mainProduct = res.items?.find((i: any) => i.isMainProduct)?.productCode || res.items?.[0]?.productCode || "-";
+                const mainItem = res.items?.find((i: any) => i.isMainProduct);
+                const displayProduct = mainItem?.productCode || res.items?.[0]?.productCode || "-";
+                const isMain = !!mainItem;
 
                 return (
                   <tr key={res.id} className={`group hover:bg-blue-50/30 transition-colors ${isNearExpiry ? 'bg-orange-50/20' : ''}`}>
@@ -166,9 +168,18 @@ export default function ReservationList({ reservations, onSuccess }: Reservation
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-col gap-1">
-                        <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200 w-fit">
-                          <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                          {mainProduct}
+                        <div className={cn(
+                          "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold w-fit border",
+                          isMain 
+                            ? "bg-amber-50 text-amber-700 border-amber-200" 
+                            : "bg-slate-100 text-slate-600 border-slate-200"
+                        )}>
+                          {isMain ? (
+                            <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                          ) : (
+                            <Package className="w-3 h-3 text-slate-400" />
+                          )}
+                          {displayProduct}
                         </div>
                         {res.items && res.items.length > 1 && (
                           <button 
