@@ -26,7 +26,7 @@ export default function ReservationForm({
     quantity: 1, 
     isMainProduct: !passedHasMainProduct 
   }]);
-  const [totalPrice, setTotalPrice] = useState<number>(0);
+  const [totalPrice, setTotalPrice] = useState<number | "">("");
   const formRef = useRef<HTMLFormElement>(null);
 
   // Auto-detect existing items and main product status
@@ -108,6 +108,10 @@ export default function ReservationForm({
     if (field === "isMainProduct") {
       if (autoHasMain) return; // Cannot select main if one already exists for this phone
       newItems.forEach((item, i) => item.isMainProduct = i === index);
+    } else if (field === "productCode") {
+      // Block numeric input: only allow non-digit characters
+      const filteredValue = value.replace(/\d/g, "");
+      newItems[index].productCode = filteredValue;
     } else {
       (newItems[index] as any)[field] = value;
     }
@@ -117,14 +121,31 @@ export default function ReservationForm({
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+    const customerName = (formData.get("customerName") as string)?.trim();
+    const address = (formData.get("address") as string)?.trim();
     
+    if (!customerName) {
+      toast.error("กรุณากรอกชื่อลูกค้า");
+      return;
+    }
+
     if (phone.length !== 10) {
       toast.error("กรุณากรอกเบอร์โทรศัพท์ให้ครบ 10 หลัก");
       return;
     }
 
+    if (!address) {
+      toast.error("กรุณากรอกที่อยู่");
+      return;
+    }
+
     if (items.some(i => !i.productCode.trim())) {
       toast.error("กรุณาระบุรหัสสินค้าให้ครบทุกรายการ");
+      return;
+    }
+
+    if (totalPrice === "" || totalPrice < 0) {
+      toast.error("กรุณาระบุราคารวมที่ถูกต้อง");
       return;
     }
 
@@ -143,10 +164,10 @@ export default function ReservationForm({
     setLoading(true);
 
     const payload = {
-      customerName: (formData.get("customerName") as string)?.trim(),
+      customerName,
       phoneNumber: phone,
-      address: (formData.get("address") as string)?.trim(),
-      totalPrice: totalPrice,
+      address,
+      totalPrice: Number(totalPrice),
       notes: (formData.get("notes") as string)?.trim() || null,
       items: items,
     };
@@ -161,7 +182,7 @@ export default function ReservationForm({
       setItems([{ productCode: "", quantity: 1, isMainProduct: true }]);
       setAutoHasMain(false);
       setLockedCodes([]);
-      setTotalPrice(0);
+      setTotalPrice("");
       formRef.current?.reset();
       toast.success("บันทึกการจองสำเร็จแล้ว");
       if (onSuccess) onSuccess();
@@ -343,7 +364,13 @@ export default function ReservationForm({
             required
             min={0}
             value={totalPrice}
-            onChange={(e) => setTotalPrice(parseFloat(e.target.value) || 0)}
+            onChange={(e) => {
+              const val = e.target.value;
+              setTotalPrice(val === "" ? "" : parseFloat(val));
+            }}
+            onFocus={(e) => {
+              if (totalPrice === 0) setTotalPrice("");
+            }}
             className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 focus:bg-white transition-all outline-none font-bold text-blue-600"
           />
         </div>

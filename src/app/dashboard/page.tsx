@@ -85,7 +85,7 @@ function DashboardContent() {
               className="flex items-center gap-2 px-4 py-2 text-sm font-black text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all border border-transparent hover:border-blue-100"
             >
               <Search className="w-4 h-4" />
-              <span>โหมดเช็คเบอร์แยก</span>
+              <span>เช็คเบอร์</span>
             </Link>
 
             <div className="hidden md:flex flex-col items-end">
