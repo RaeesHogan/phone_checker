@@ -157,8 +157,6 @@ export async function createReservation(data: any) {
   }
 }
 
-import { Status, Role } from "@prisma/client";
-
 export async function cancelReservation(id: string) {
   try {
     const session = await auth();
