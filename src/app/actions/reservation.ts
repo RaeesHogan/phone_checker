@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { normalizePhoneNumber, isValidThaiPhone } from "@/lib/phone-utils";
 import { revalidatePath } from "next/cache";
 import { addDays } from "date-fns";
+import { Status, Role } from "@prisma/client";
 
 import { z } from "zod";
 
@@ -156,6 +157,8 @@ export async function createReservation(data: any) {
   }
 }
 
+import { Status, Role } from "@prisma/client";
+
 export async function cancelReservation(id: string) {
   try {
     const session = await auth();
@@ -164,7 +167,9 @@ export async function cancelReservation(id: string) {
     }
 
     const userId = (session.user as any).id;
-    const userRole = (session.user as any).role;
+    const userRole = (session.user as any).role as Role;
+
+    console.log(`[DEBUG] Attempting to cancel reservation ${id} by user ${userId} (Role: ${userRole})`);
 
     // 1. Fetch reservation to check ownership
     const reservation = await prisma.reservation.findUnique({
@@ -173,11 +178,12 @@ export async function cancelReservation(id: string) {
     });
 
     if (!reservation) {
+      console.warn(`[DEBUG] Reservation ${id} not found`);
       return { error: "ไม่พบข้อมูลการจอง" };
     }
 
     // 2. Authorization Check: Only Creator or Admin can cancel
-    const isAdmin = userRole === "ADMIN";
+    const isAdmin = userRole === Role.ADMIN;
     const isOwner = reservation.createdBy === userId;
 
     if (!isAdmin && !isOwner) {
@@ -186,30 +192,41 @@ export async function cancelReservation(id: string) {
     }
 
     // 3. Update status (Sync to items for strict locking index)
+    // Note: We use a transaction to ensure both reservation and its items are cancelled together
     await prisma.$transaction([
       prisma.reservation.update({
         where: { id },
-        data: { status: "CANCELLED" },
+        data: { status: Status.CANCELLED },
       }),
       prisma.reservationItem.updateMany({
         where: { reservationId: id },
-        data: { status: "CANCELLED" },
+        data: { status: Status.CANCELLED },
       })
     ]);
+
+    console.log(`[DEBUG] Reservation ${id} and its items successfully cancelled`);
 
     // 4. Audit Log
     await prisma.auditLog.create({
       data: {
         userId,
         action: "CANCEL_RESERVATION",
-        details: { reservationId: id, authorizedBy: userRole, wasOwner: isOwner },
+        details: { 
+          reservationId: id, 
+          authorizedBy: userRole, 
+          wasOwner: isOwner 
+        },
       },
     });
 
     revalidatePath("/dashboard");
     return { success: true };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Cancel reservation error:", error);
+    // Return specific error message for debugging if it's a Prisma error
+    if (error.code) {
+      return { error: `Database error (${error.code}): กรุณาติดต่อผู้ดูแลระบบ` };
+    }
     return { error: "เกิดข้อผิดพลาดในการยกเลิกการจอง" };
   }
 }
