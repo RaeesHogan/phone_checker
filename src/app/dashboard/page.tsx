@@ -79,7 +79,16 @@ function DashboardContent() {
             <h1 className="text-xl font-black text-slate-900 tracking-tight">Dashboard</h1>
           </div>
           
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4">
+            {/* Subtle Search Button in Header Area */}
+            <Link 
+              href="/dashboard/search"
+              className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors border border-slate-200"
+            >
+              <Search className="w-4 h-4" />
+              <span>เช็คเบอร์ลูกค้า</span>
+            </Link>
+
             <div className="hidden md:flex flex-col items-end">
               <span className="text-sm font-bold text-slate-900">{session?.user?.name}</span>
               <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">{userRole}</span>
@@ -120,25 +129,6 @@ function DashboardContent() {
             </Link>
           </div>
         )}
-
-        {/* Check Number Quick Action */}
-        <div className="mb-8">
-          <Link 
-            href="/dashboard/search"
-            className="group flex items-center justify-between p-6 bg-slate-900 rounded-[2rem] shadow-xl shadow-slate-900/20 hover:scale-[1.01] transition-all border border-white/5"
-          >
-            <div className="flex items-center gap-4">
-              <div className="bg-blue-600 p-3 rounded-2xl">
-                <Search className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h3 className="text-xl font-black text-white tracking-tight">ระบบเช็คเบอร์ / จองสินค้า</h3>
-                <p className="text-slate-400 text-xs font-medium uppercase tracking-widest opacity-60">Verification Terminal</p>
-              </div>
-            </div>
-            <ChevronRight className="w-6 h-6 text-slate-700 group-hover:text-blue-400 group-hover:translate-x-2 transition-all" />
-          </Link>
-        </div>
 
         {/* Stats Row */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
