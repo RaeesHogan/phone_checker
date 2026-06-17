@@ -86,6 +86,22 @@ export async function createReservation(data: any) {
         return { error: `สินค้าต่อไปนี้ถูกจองไว้แล้วสำหรับเบอร์นี้: ${duplicates.join(", ")}` };
       }
 
+      // 2.5 Strict Main Product Locking Check
+      const hasNewMain = validatedData.items.some(i => i.isMainProduct);
+      if (hasNewMain) {
+        const existingMain = await tx.reservationItem.findFirst({
+          where: {
+            phoneNumber: validatedData.phoneNumber,
+            isMainProduct: true,
+            status: "ACTIVE",
+          }
+        });
+
+        if (existingMain) {
+          return { error: "เบอร์นี้มีการจองสินค้าหลักแล้ว ไม่สามารถเพิ่มสินค้าหลักใหม่ได้" };
+        }
+      }
+
       // 3. Get expiration days
       const expireDaysSetting = await tx.setting.findUnique({ where: { key: "RESERVATION_EXPIRE_DAYS" } });
       const days = expireDaysSetting ? parseInt(expireDaysSetting.value) : 14;

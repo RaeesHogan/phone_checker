@@ -4,7 +4,6 @@ import { signOut, useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import ReservationForm from "@/components/forms/ReservationForm";
 import ReservationList from "@/components/features/ReservationList";
-import DashboardSearch from "@/components/features/DashboardSearch";
 import { 
   LayoutDashboard, 
   Users, 

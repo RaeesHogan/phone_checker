@@ -68,6 +68,7 @@ export async function GET(req: NextRequest) {
         items: {
           select: {
             productCode: true,
+            isMainProduct: true,
           },
         },
       },
@@ -76,18 +77,17 @@ export async function GET(req: NextRequest) {
     if (activeReservations.length === 0) {
       return NextResponse.json({
         found: false,
-        lockedProductCodes: [],
+        lockedItems: [],
         message: "ไม่พบข้อมูลการจองที่ยังใช้งานอยู่สำหรับเบอร์นี้",
       });
     }
 
-    const lockedProductCodes = Array.from(
-      new Set(activeReservations.flatMap((res) => res.items.map((item) => item.productCode)))
-    );
+    const lockedItems = activeReservations.flatMap((res) => res.items);
 
     return NextResponse.json({
       found: true,
-      lockedProductCodes,
+      lockedItems,
+      hasMainProduct: lockedItems.some(item => item.isMainProduct),
       message: "เบอร์โทรศัพท์นี้มีการจองสินค้าบางรายการอยู่แล้ว",
     });
   } catch (error) {
