@@ -103,6 +103,8 @@ export async function createReservation(data: any) {
           items: {
             create: validatedData.items.map(item => ({
               productCode: item.productCode,
+              phoneNumber: validatedData.phoneNumber,
+              status: "ACTIVE",
               quantity: item.quantity,
               isMainProduct: item.isMainProduct,
             })),
@@ -160,11 +162,17 @@ export async function cancelReservation(id: string) {
       return { error: "คุณไม่มีสิทธิ์ยกเลิกรายการจองนี้" };
     }
 
-    // 3. Update status
-    await prisma.reservation.update({
-      where: { id },
-      data: { status: "CANCELLED" },
-    });
+    // 3. Update status (Sync to items for strict locking index)
+    await prisma.$transaction([
+      prisma.reservation.update({
+        where: { id },
+        data: { status: "CANCELLED" },
+      }),
+      prisma.reservationItem.updateMany({
+        where: { reservationId: id },
+        data: { status: "CANCELLED" },
+      })
+    ]);
 
     // 4. Audit Log
     await prisma.auditLog.create({
