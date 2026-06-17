@@ -56,7 +56,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const reservation = await prisma.reservation.findFirst({
+    const activeReservations = await prisma.reservation.findMany({
       where: {
         phoneNumber: normalized,
         status: "ACTIVE",
@@ -65,20 +65,30 @@ export async function GET(req: NextRequest) {
         },
       },
       select: {
-        status: true,
+        items: {
+          select: {
+            productCode: true,
+          },
+        },
       },
     });
 
-    if (!reservation) {
+    if (activeReservations.length === 0) {
       return NextResponse.json({
         found: false,
+        lockedProductCodes: [],
         message: "ไม่พบข้อมูลการจองที่ยังใช้งานอยู่สำหรับเบอร์นี้",
       });
     }
 
+    const lockedProductCodes = Array.from(
+      new Set(activeReservations.flatMap((res) => res.items.map((item) => item.productCode)))
+    );
+
     return NextResponse.json({
       found: true,
-      message: "เบอร์โทรศัพท์นี้มีการจองที่ยังใช้งานอยู่แล้ว",
+      lockedProductCodes,
+      message: "เบอร์โทรศัพท์นี้มีการจองสินค้าบางรายการอยู่แล้ว",
     });
   } catch (error) {
     console.error("Public search error:", error);

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, Phone, CheckCircle2, Lock, ArrowRight, Loader2, Clock } from "lucide-react";
+import { Search, Phone, CheckCircle2, Lock, ArrowRight, Loader2, Clock, AlertTriangle, CheckSquare, Square } from "lucide-react";
 import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
 
@@ -14,6 +14,8 @@ export default function DashboardSearch({ onSelectFreeNumber }: DashboardSearchP
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState<string[]>([]);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [showPopup, setShowPopup] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem("staff_search_history");
@@ -31,6 +33,8 @@ export default function DashboardSearch({ onSelectFreeNumber }: DashboardSearchP
     
     setResult(null);
     setLoading(true);
+    setAcceptedTerms(false);
+    setShowPopup(false);
 
     try {
       const res = await fetch(`/api/public/search?phone=${encodeURIComponent(targetPhone)}`);
@@ -42,7 +46,8 @@ export default function DashboardSearch({ onSelectFreeNumber }: DashboardSearchP
       saveToHistory(targetPhone);
       
       if (data.found) {
-        toast.error("เบอร์นี้มีการจองแล้ว", { icon: "🔒" });
+        setShowPopup(true);
+        toast.error("เบอร์นี้มีการจองสินค้าบางรายการแล้ว", { icon: "🔒" });
       } else {
         toast.success("เบอร์นี้ยังว่างอยู่");
       }
@@ -60,6 +65,7 @@ export default function DashboardSearch({ onSelectFreeNumber }: DashboardSearchP
       handleSearch(val);
     } else {
       setResult(null);
+      setShowPopup(false);
     }
   };
 
@@ -138,15 +144,49 @@ export default function DashboardSearch({ onSelectFreeNumber }: DashboardSearchP
               </div>
             )}
 
-            {result && result.found && (
-              <div className="flex items-center gap-4 p-6 bg-red-500/10 border-2 border-red-500/20 rounded-[1.5rem] text-red-400 animate-in zoom-in-95">
-                <div className="bg-red-500/20 p-2 rounded-full">
-                  <Lock className="w-7 h-7 text-red-400" />
+            {result && result.found && showPopup && (
+              <div className="p-6 bg-red-500/10 border-2 border-red-500/20 rounded-[1.5rem] space-y-4 animate-in zoom-in-95">
+                <div className="flex items-start gap-4">
+                  <div className="bg-red-500/20 p-2 rounded-full mt-1">
+                    <AlertTriangle className="w-6 h-6 text-red-400" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-black text-lg tracking-tight text-red-400">เบอร์นี้มีสินค้าที่ถูกล็อคแล้ว</p>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {result.lockedProductCodes.map((code: string) => (
+                        <span key={code} className="px-2 py-0.5 bg-red-500/20 text-red-300 rounded-md text-[10px] font-bold border border-red-500/30">
+                          • {code}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-black text-lg tracking-tight leading-tight">เบอร์นี้มีการจองแล้ว</p>
-                  <p className="text-red-500/40 text-[10px] font-bold uppercase tracking-widest mt-0.5 italic">Locked by system</p>
+
+                <div className="pt-2 border-t border-red-500/10">
+                  <button
+                    onClick={() => setAcceptedTerms(!acceptedTerms)}
+                    className="flex items-start gap-3 w-full text-left group"
+                  >
+                    <div className={cn(
+                      "mt-0.5 p-0.5 rounded transition-colors",
+                      acceptedTerms ? "bg-emerald-500 text-white" : "bg-white/10 text-slate-500 group-hover:bg-white/20"
+                    )}>
+                      {acceptedTerms ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
+                    </div>
+                    <p className="text-[11px] font-bold text-slate-400 leading-relaxed">
+                      ฉันเข้าใจและยอมรับเงื่อนไข (ห้ามขายสินค้าที่ถูกล็อคซ้ำ แต่สามารถจองสินค้าอื่นเพิ่มได้)
+                    </p>
+                  </button>
                 </div>
+
+                <button 
+                  disabled={!acceptedTerms}
+                  onClick={() => onSelectFreeNumber(phone)}
+                  className="w-full flex items-center justify-center gap-2 py-3 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-600 text-white rounded-xl text-sm font-black transition-all active:scale-95 shadow-lg shadow-blue-900/20"
+                >
+                  <span>ดำเนินการจองสินค้าอื่น</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
               </div>
             )}
           </div>

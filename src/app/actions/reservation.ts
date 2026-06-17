@@ -6,81 +6,135 @@ import { normalizePhoneNumber, isValidThaiPhone } from "@/lib/phone-utils";
 import { revalidatePath } from "next/cache";
 import { addDays } from "date-fns";
 
-export async function createReservation(formData: FormData) {
+import { z } from "zod";
+
+const reservationItemSchema = z.object({
+  productCode: z.string().min(1, "รหัสสินค้าต้องไม่ว่าง").max(50, "รหัสสินค้ายาวเกินไป"),
+  quantity: z.number().int().positive("จำนวนต้องมากกว่า 0"),
+  isMainProduct: z.boolean().default(false),
+});
+
+const createReservationSchema = z.object({
+  customerName: z.string().min(1, "กรุณากรอกชื่อลูกค้า").max(100, "ชื่อลูกค้ายาวเกินไป"),
+  phoneNumber: z.string().refine(isValidThaiPhone, "เบอร์โทรศัพท์ไม่ถูกต้อง"),
+  address: z.string().min(1, "กรุณากรอกที่อยู่").max(300, "ที่อยู่ยาวเกินไป"),
+  totalPrice: z.number().nonnegative("ราคาต้องไม่ติดลบ"),
+  notes: z.string().max(500, "หมายเหตุยาวเกินไป").nullable(),
+  items: z.array(reservationItemSchema).min(1, "ต้องมีสินค้าอย่างน้อย 1 รายการ"),
+});
+
+export async function createReservation(data: any) {
   const session = await auth();
   if (!session || !session.user) {
     return { error: "กรุณาเข้าสู่ระบบก่อนดำเนินการ" };
   }
 
-  const customerName = (formData.get("customerName") as string)?.trim();
-  const rawPhone = (formData.get("phoneNumber") as string)?.trim();
-  const address = (formData.get("address") as string)?.trim();
-  const productCode = (formData.get("productCode") as string)?.trim();
-  const notes = (formData.get("notes") as string)?.trim() || null;
+  // Support both FormData (old) and JSON (new) for transition
+  let payload: any;
+  if (data instanceof FormData) {
+    const rawItems = data.get("items") ? JSON.parse(data.get("items") as string) : [
+      {
+        productCode: (data.get("productCode") as string)?.trim(),
+        quantity: 1,
+        isMainProduct: true,
+      }
+    ];
 
-  // 1. Validate required fields
-  if (!customerName || !rawPhone || !address || !productCode) {
-    return { error: "กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน" };
+    payload = {
+      customerName: (data.get("customerName") as string)?.trim(),
+      phoneNumber: normalizePhoneNumber((data.get("phoneNumber") as string)?.trim()),
+      address: (data.get("address") as string)?.trim(),
+      totalPrice: parseFloat(data.get("totalPrice") as string || "0"),
+      notes: (data.get("notes") as string)?.trim() || null,
+      items: rawItems,
+    };
+  } else {
+    payload = {
+      ...data,
+      phoneNumber: normalizePhoneNumber(data.phoneNumber),
+    };
   }
 
-  // 2. Max-length guards
-  if (customerName.length > 100) return { error: "ชื่อลูกค้ายาวเกินไป (max 100 ตัวอักษร)" };
-  if (address.length > 300) return { error: "ที่อยู่ยาวเกินไป (max 300 ตัวอักษร)" };
-  if (productCode.length > 50) return { error: "รหัสสินค้ายาวเกินไป (max 50 ตัวอักษร)" };
-  if (notes && notes.length > 500) return { error: "หมายเหตุยาวเกินไป (max 500 ตัวอักษร)" };
-
-  const normalizedPhone = normalizePhoneNumber(rawPhone);
-  if (!isValidThaiPhone(normalizedPhone)) {
-    return { error: "เบอร์โทรศัพท์ไม่ถูกต้อง (ต้องมี 10 หลัก)" };
+  // 1. Validate with Zod
+  const validation = createReservationSchema.safeParse(payload);
+  if (!validation.success) {
+    return { error: validation.error.errors[0].message };
   }
+
+  const validatedData = validation.data;
+  const newProductCodes = validatedData.items.map(i => i.productCode);
 
   try {
-    // 2. Check for existing active reservation
-    const existing = await prisma.reservation.findFirst({
-      where: {
-        phoneNumber: normalizedPhone,
-        status: "ACTIVE",
-        expirationDate: {
-          gt: new Date(),
+    // 2. Transactional Validation (Product-Level Locking)
+    return await prisma.$transaction(async (tx) => {
+      // Find all ACTIVE reservation items for this phone
+      const activeItems = await tx.reservationItem.findMany({
+        where: {
+          reservation: {
+            phoneNumber: validatedData.phoneNumber,
+            status: "ACTIVE",
+            expirationDate: { gt: new Date() },
+          },
         },
-      },
+        select: { productCode: true },
+      });
+
+      const existingCodes = new Set(activeItems.map(i => i.productCode));
+      const duplicates = newProductCodes.filter(code => existingCodes.has(code));
+
+      if (duplicates.length > 0) {
+        return { error: `สินค้าต่อไปนี้ถูกจองไว้แล้วสำหรับเบอร์นี้: ${duplicates.join(", ")}` };
+      }
+
+      // 3. Get expiration days
+      const expireDaysSetting = await tx.setting.findUnique({ where: { key: "RESERVATION_EXPIRE_DAYS" } });
+      const days = expireDaysSetting ? parseInt(expireDaysSetting.value) : 14;
+
+      // 4. Create Reservation & Items
+      const reservation = await tx.reservation.create({
+        data: {
+          customerName: validatedData.customerName,
+          phoneNumber: validatedData.phoneNumber,
+          address: validatedData.address,
+          totalPrice: validatedData.totalPrice,
+          notes: validatedData.notes,
+          expirationDate: addDays(new Date(), days),
+          createdBy: (session.user as any).id,
+          items: {
+            create: validatedData.items.map(item => ({
+              productCode: item.productCode,
+              quantity: item.quantity,
+              isMainProduct: item.isMainProduct,
+            })),
+          },
+          // Legacy field support for older queries if needed
+          productCode: validatedData.items.find(i => i.isMainProduct)?.productCode || validatedData.items[0].productCode,
+        },
+      });
+
+      // 5. Audit Log
+      await tx.auditLog.create({
+        data: {
+          userId: (session.user as any).id,
+          action: "CREATE_RESERVATION",
+          details: { 
+            reservationId: reservation.id,
+            phoneNumber: validatedData.phoneNumber, 
+            itemCount: validatedData.items.length 
+          },
+        },
+      });
+
+      return { success: true };
+    }, {
+      isolationLevel: 'Serializable',
     });
 
-    if (existing) {
-      return { error: "เบอร์โทรศัพท์นี้มีการจองที่ยังใช้งานอยู่แล้ว" };
-    }
-
-    // 3. Get expiration days from settings or default
-    const expireDaysSetting = await prisma.setting.findUnique({ where: { key: "RESERVATION_EXPIRE_DAYS" } });
-    const days = expireDaysSetting ? parseInt(expireDaysSetting.value) : 14;
-
-    // 4. Create
-    await prisma.reservation.create({
-      data: {
-        customerName,
-        phoneNumber: normalizedPhone,
-        address,
-        productCode,
-        notes,
-        expirationDate: addDays(new Date(), days),
-        createdBy: (session.user as any).id,
-      },
-    });
-
-    // 5. Audit Log
-    await prisma.auditLog.create({
-      data: {
-        userId: (session.user as any).id,
-        action: "CREATE_RESERVATION",
-        details: { phoneNumber: normalizedPhone, customerName },
-      },
-    });
-
-    revalidatePath("/dashboard");
-    return { success: true };
   } catch (error) {
     console.error("Create reservation error:", error);
     return { error: "เกิดข้อผิดพลาดในการบันทึกข้อมูล" };
+  } finally {
+    revalidatePath("/dashboard");
   }
 }
 
