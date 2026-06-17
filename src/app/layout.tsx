@@ -3,6 +3,7 @@ import { Sarabun, Geist } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import { cn } from "@/lib/utils";
+import { SpeedInsights } from '@vercel/speed-insights/next';
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
@@ -25,6 +26,7 @@ export default function RootLayout({
     <html lang="th" suppressHydrationWarning className={cn("font-sans", geist.variable)}>
       <body className={sarabun.className}>
         <Providers>{children}</Providers>
+        <SpeedInsights />
       </body>
     </html>
   );
