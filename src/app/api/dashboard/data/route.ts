@@ -65,6 +65,12 @@ export async function GET(req: NextRequest) {
             fullName: true,
             username: true,
           }
+        },
+        items: {
+          select: {
+            productCode: true,
+            isMainProduct: true,
+          }
         }
       },
       orderBy: { expirationDate: "asc" },

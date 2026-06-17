@@ -157,24 +157,31 @@ export async function createReservation(data: any) {
 }
 
 export async function cancelReservation(id: string) {
-  const session = await auth();
-  if (!session || !session.user) return { error: "Unauthorized" };
-
-  const userId = (session.user as any).id;
-  const userRole = (session.user as any).role;
-
   try {
+    const session = await auth();
+    if (!session || !session.user) {
+      return { error: "กรุณาเข้าสู่ระบบก่อนดำเนินการ" };
+    }
+
+    const userId = (session.user as any).id;
+    const userRole = (session.user as any).role;
+
     // 1. Fetch reservation to check ownership
     const reservation = await prisma.reservation.findUnique({
       where: { id },
-      select: { createdBy: true }
+      select: { createdBy: true, status: true }
     });
 
-    if (!reservation) return { error: "ไม่พบข้อมูลการจอง" };
+    if (!reservation) {
+      return { error: "ไม่พบข้อมูลการจอง" };
+    }
 
     // 2. Authorization Check: Only Creator or Admin can cancel
-    if (reservation.createdBy !== userId && userRole !== "ADMIN") {
-      console.warn(`[SECURITY ALERT] Unauthorized cancel attempt by ${userId} on reservation ${id}`);
+    const isAdmin = userRole === "ADMIN";
+    const isOwner = reservation.createdBy === userId;
+
+    if (!isAdmin && !isOwner) {
+      console.warn(`[SECURITY ALERT] Unauthorized cancel attempt by ${userId} (Role: ${userRole}) on reservation ${id}`);
       return { error: "คุณไม่มีสิทธิ์ยกเลิกรายการจองนี้" };
     }
 
@@ -195,7 +202,7 @@ export async function cancelReservation(id: string) {
       data: {
         userId,
         action: "CANCEL_RESERVATION",
-        details: { reservationId: id, authorizedBy: userRole },
+        details: { reservationId: id, authorizedBy: userRole, wasOwner: isOwner },
       },
     });
 
@@ -203,6 +210,6 @@ export async function cancelReservation(id: string) {
     return { success: true };
   } catch (error) {
     console.error("Cancel reservation error:", error);
-    return { error: "ไม่สามารถยกเลิกการจองได้" };
+    return { error: "เกิดข้อผิดพลาดในการยกเลิกการจอง" };
   }
 }
