@@ -208,6 +208,35 @@ export default function ReservationForm({
         )}
       </div>
 
+      {/* Existing Locked Items Preview (New Feature) */}
+      {lockedCodes.length > 0 && (
+        <div className="mb-6 p-4 bg-slate-50 border border-slate-200 rounded-2xl animate-in slide-in-from-top-2 duration-500">
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1 flex items-center gap-2">
+            <AlertCircle className="w-3.5 h-3.5 text-amber-500" /> 
+            รายการที่เบอร์นี้จองไว้แล้ว (ห้ามจองซ้ำ)
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {lockedCodes.map((code) => {
+              const isMain = code.includes("(หลัก)") || (autoHasMain && lockedCodes.indexOf(code) === 0); // Simplified check for preview
+              return (
+                <span 
+                  key={code} 
+                  className={cn(
+                    "px-3 py-1 rounded-xl text-[11px] font-black border flex items-center gap-1.5 shadow-sm bg-white",
+                    autoHasMain && lockedCodes.indexOf(code) === 0
+                      ? "text-amber-600 border-amber-200 shadow-amber-100/50" 
+                      : "text-slate-600 border-slate-200"
+                  )}
+                >
+                  {autoHasMain && lockedCodes.indexOf(code) === 0 && <Star className="w-3 h-3 fill-amber-500" />}
+                  {code}
+                </span>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <form ref={formRef} onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div className="space-y-2">
@@ -301,7 +330,7 @@ export default function ReservationForm({
                         type="text"
                         value={item.productCode}
                         onChange={(e) => updateItem(index, "productCode", e.target.value)}
-                        placeholder="เช่น PROD-01"
+                        placeholder="เช่น VPa"
                         className={cn(
                           "w-full px-3 py-2 border rounded-xl focus:outline-none font-mono text-sm transition-colors",
                           isLocked ? "bg-red-50 border-red-200 text-red-600 focus:border-red-500" : "bg-white border-slate-200 focus:border-blue-500"
