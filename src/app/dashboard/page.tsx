@@ -79,22 +79,13 @@ function DashboardContent() {
           </div>
           
           <div className="flex items-center gap-4">
-            {/* Subtle Standalone Search Link */}
-            <Link 
-              href="/check-phone"
-              className="hidden sm:flex items-center gap-2 px-3 py-1.5 text-[11px] font-black text-slate-400 hover:text-blue-600 uppercase tracking-wider transition-colors"
-            >
-              <Search className="w-3.5 h-3.5" />
-              <span>โหมดเช็คเบอร์แยก</span>
-            </Link>
-
-            {/* Subtle Search Button in Header Area */}
+            {/* Unified Search Link with Preferred UI Label */}
             <Link 
               href="/dashboard/search"
-              className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors border border-slate-200"
+              className="flex items-center gap-2 px-4 py-2 text-sm font-black text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all border border-transparent hover:border-blue-100"
             >
               <Search className="w-4 h-4" />
-              <span>เช็คเบอร์ลูกค้า</span>
+              <span>โหมดเช็คเบอร์แยก</span>
             </Link>
 
             <div className="hidden md:flex flex-col items-end">

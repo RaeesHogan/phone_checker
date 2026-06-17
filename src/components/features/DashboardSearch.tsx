@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, Phone, CheckCircle2, Lock, ArrowRight, Loader2, Clock, AlertTriangle, CheckSquare, Square, Star } from "lucide-react";
+import { Search, Phone, CheckCircle2, Star, ArrowRight, Loader2, Clock, AlertTriangle, CheckSquare, Square, Package, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
 
@@ -70,140 +70,152 @@ export default function DashboardSearch({ onSelectPhone }: DashboardSearchProps)
   };
 
   return (
-    <div className="bg-slate-900 rounded-[2.5rem] p-8 shadow-2xl shadow-slate-900/40 text-white overflow-hidden relative group border border-white/5 max-w-2xl mx-auto">
-      <div className="relative z-10">
-        <div className="flex items-center gap-3 mb-8">
-          <div className="bg-blue-500 p-2.5 rounded-2xl shadow-lg shadow-blue-500/20 text-white">
-            <Search className="w-6 h-6" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-black tracking-tight">ระบบตรวจสอบสิทธิ์เบอร์</h2>
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest opacity-60">Number Verification</p>
-          </div>
-        </div>
-
-        <div className="space-y-6">
-          <div className="relative group">
-            <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-slate-500 group-focus-within:text-blue-400 transition-colors">
-              <Phone className="w-6 h-6" />
+    <div className="w-full max-w-2xl mx-auto space-y-8 animate-in fade-in duration-700">
+      {/* Search Terminal UI (Light Theme) */}
+      <div className="bg-white rounded-[2.5rem] p-8 shadow-xl shadow-slate-200/60 border border-slate-100 relative overflow-hidden group">
+        <div className="relative z-10">
+          <div className="flex items-center gap-4 mb-8">
+            <div className="bg-blue-600 p-3 rounded-2xl shadow-lg shadow-blue-200 text-white">
+              <Search className="w-6 h-6" />
             </div>
-            <input
-              type="tel"
-              placeholder="08XXXXXXXX"
-              value={phone}
-              onChange={onPhoneChange}
-              className="w-full pl-14 pr-4 py-5 bg-white/5 border-2 border-white/10 rounded-[1.5rem] text-2xl font-bold focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500/50 focus:bg-white/10 transition-all placeholder:text-slate-700 tracking-widest font-mono"
-            />
-            {loading && (
-              <div className="absolute inset-y-0 right-5 flex items-center">
-                <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />
-              </div>
-            )}
+            <div>
+              <h2 className="text-2xl font-black text-slate-900 tracking-tight">ตรวจสอบสถานะเบอร์</h2>
+              <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Number Verification System</p>
+            </div>
           </div>
 
-          {/* History */}
-          {history.length > 0 && !result && !loading && (
-            <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-500">
-              <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2 ml-1">
-                <Clock className="w-3 h-3" />
-                <span>ประวัติล่าสุด</span>
-              </p>
-              <div className="flex flex-wrap gap-2">
+          <div className="space-y-6">
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-600 transition-colors">
+                <Phone className="w-6 h-6" />
+              </div>
+              <input
+                type="tel"
+                placeholder="08XXXXXXXX"
+                value={phone}
+                onChange={onPhoneChange}
+                className="w-full pl-16 pr-6 py-5 bg-slate-50 border-2 border-slate-100 rounded-3xl text-2xl font-black focus:outline-none focus:border-blue-600 focus:ring-8 focus:ring-blue-600/5 transition-all placeholder:text-slate-300 tracking-[0.1em] font-mono text-slate-900 shadow-inner"
+              />
+              {loading && (
+                <div className="absolute inset-y-0 right-6 flex items-center">
+                  <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />
+                </div>
+              )}
+            </div>
+
+            {/* History Tags */}
+            {history.length > 0 && !result && !loading && (
+              <div className="flex flex-wrap gap-2 animate-in fade-in slide-in-from-top-2 duration-500">
+                <p className="w-full text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1 flex items-center gap-2">
+                  <Clock className="w-3.5 h-3.5" /> ประวัติล่าสุด
+                </p>
                 {history.map(num => (
                   <button
                     key={num}
                     onClick={() => { setPhone(num); handleSearch(num); }}
-                    className="px-4 py-2 bg-white/5 hover:bg-blue-600 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition-all border border-white/5 hover:border-blue-400/50"
+                    className="px-4 py-2 bg-slate-50 hover:bg-white border border-slate-100 hover:border-blue-400 text-slate-500 hover:text-blue-600 rounded-xl text-xs font-bold transition-all hover:shadow-md active:scale-95"
                   >
                     {num}
                   </button>
                 ))}
               </div>
-            </div>
-          )}
+            )}
 
-          <div className="min-h-[90px] animate-in fade-in slide-in-from-bottom-2 duration-300">
+            {/* Success Result */}
             {result && !result.found && (
-              <div className="flex items-center justify-between p-6 bg-emerald-500/10 border-2 border-emerald-500/20 rounded-[1.5rem] animate-in zoom-in-95">
+              <div className="p-6 bg-emerald-50 border-2 border-emerald-100 rounded-3xl flex items-center justify-between animate-in zoom-in-95 duration-300 shadow-sm shadow-emerald-100/50">
                 <div className="flex items-center gap-4">
-                  <div className="bg-emerald-500/20 p-2 rounded-full">
-                    <CheckCircle2 className="w-7 h-7 text-emerald-400" />
+                  <div className="bg-white p-2.5 rounded-2xl shadow-sm text-emerald-500 border border-emerald-100">
+                    <CheckCircle2 className="w-7 h-7" />
                   </div>
                   <div>
-                    <p className="text-emerald-400 font-black text-lg tracking-tight leading-tight">เบอร์นี้ว่างอยู่</p>
-                    <p className="text-emerald-500/40 text-[10px] font-bold uppercase tracking-widest mt-0.5">Ready for booking</p>
+                    <p className="text-emerald-700 font-black text-lg tracking-tight">เบอร์นี้ว่างอยู่</p>
+                    <p className="text-emerald-600/60 text-[10px] font-black uppercase tracking-widest mt-0.5">Ready for booking</p>
                   </div>
                 </div>
                 <button 
                   onClick={() => onSelectPhone(phone, false)}
-                  className="group flex items-center gap-2 px-5 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-black transition-all active:scale-95 shadow-xl shadow-emerald-900/40"
+                  className="group flex items-center gap-2 px-6 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-sm font-black transition-all active:scale-95 shadow-lg shadow-emerald-200"
                 >
-                  <span>สร้างการจองใหม่</span>
+                  <span>จองสินค้าใหม่</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </button>
               </div>
             )}
 
-            {result && result.found && showPopup && (
-              <div className="p-6 bg-red-500/10 border-2 border-red-500/20 rounded-[1.5rem] space-y-4 animate-in zoom-in-95">
-                <div className="flex items-start gap-4">
-                  <div className="bg-red-500/20 p-2 rounded-full mt-1">
-                    <AlertTriangle className="w-6 h-6 text-red-400" />
+            {/* Found / Locked Result */}
+            {result && result.found && (
+              <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
+                  <div className="px-6 py-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                    <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 text-red-500" /> รายการที่ล็อคอยู่
+                    </h3>
+                    <span className="text-[10px] font-black px-2 py-0.5 bg-red-100 text-red-600 rounded-full border border-red-200 animate-pulse">LOCKED</span>
                   </div>
-                  <div className="flex-1">
-                    <p className="font-black text-lg tracking-tight text-red-400">รายการสินค้าที่ถูกล็อคแล้ว</p>
-                    <div className="mt-2 flex flex-wrap gap-1.5">
-                      {result.lockedItems.map((item: any) => (
-                        <span 
-                          key={item.productCode} 
-                          className={cn(
-                            "px-2 py-0.5 rounded-md text-[10px] font-bold border flex items-center gap-1",
-                            item.isMainProduct 
-                              ? "bg-amber-500/20 text-amber-300 border-amber-500/30" 
-                              : "bg-red-500/20 text-red-300 border-red-500/30"
-                          )}
-                        >
-                          {item.isMainProduct && <Star className="w-3 h-3 fill-amber-300" />}
-                          {item.productCode}
-                          {item.isMainProduct && <span className="text-[9px] opacity-70 ml-0.5">(หลัก)</span>}
-                        </span>
-                      ))}
-                    </div>
+                  <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {result.lockedItems.map((item: any) => (
+                      <div 
+                        key={item.productCode} 
+                        className={cn(
+                          "flex items-center gap-3 p-3 rounded-2xl border transition-colors",
+                          item.isMainProduct 
+                            ? "bg-amber-50 border-amber-100" 
+                            : "bg-red-50 border-red-100"
+                        )}
+                      >
+                        <div className={cn(
+                          "w-10 h-10 rounded-xl flex items-center justify-center font-black",
+                          item.isMainProduct ? "bg-amber-100 text-amber-600" : "bg-red-100 text-red-600"
+                        )}>
+                          {item.isMainProduct ? <Star className="w-5 h-5 fill-amber-500" /> : <Package className="w-5 h-5" />}
+                        </div>
+                        <div>
+                          <p className="font-mono font-black text-slate-900 text-lg leading-tight">{item.productCode}</p>
+                          <p className={cn(
+                            "text-[9px] font-black uppercase tracking-tight",
+                            item.isMainProduct ? "text-amber-600" : "text-red-600"
+                          )}>
+                            {item.isMainProduct ? "สินค้าหลัก ⭐" : "สินค้าย่อย"}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {/* Internal Staff Actions */}
+                  <div className="p-4 bg-slate-50 border-t border-slate-100 space-y-4">
+                    <button
+                      onClick={() => setAcceptedTerms(!acceptedTerms)}
+                      className="flex items-start gap-3 w-full text-left group"
+                    >
+                      <div className={cn(
+                        "mt-0.5 p-0.5 rounded transition-colors border-2",
+                        acceptedTerms ? "bg-emerald-600 border-emerald-600 text-white" : "bg-white border-slate-200 text-transparent group-hover:border-blue-400"
+                      )}>
+                        <CheckSquare className="w-4 h-4" />
+                      </div>
+                      <p className="text-[11px] font-bold text-slate-500 leading-relaxed">
+                        ฉันเข้าใจและยอมรับเงื่อนไข <span className="text-red-500 underline decoration-red-200 underline-offset-2">(ห้ามขายสินค้าที่ล็อคซ้ำ {result.hasMainProduct && ", ห้ามเพิ่มสินค้าหลักซ้ำ"})</span>
+                      </p>
+                    </button>
+
+                    <button 
+                      disabled={!acceptedTerms}
+                      onClick={() => onSelectPhone(phone, result.hasMainProduct)}
+                      className="w-full flex items-center justify-center gap-2 py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-200 disabled:text-slate-400 text-white rounded-2xl text-sm font-black transition-all active:scale-95 shadow-lg shadow-blue-200 disabled:shadow-none"
+                    >
+                      <span>ดำเนินการจองสินค้าอื่นเพิ่ม</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
-
-                <div className="pt-2 border-t border-red-500/10">
-                  <button
-                    onClick={() => setAcceptedTerms(!acceptedTerms)}
-                    className="flex items-start gap-3 w-full text-left group"
-                  >
-                    <div className={cn(
-                      "mt-0.5 p-0.5 rounded transition-colors",
-                      acceptedTerms ? "bg-emerald-500 text-white" : "bg-white/10 text-slate-500 group-hover:bg-white/20"
-                    )}>
-                      {acceptedTerms ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
-                    </div>
-                    <p className="text-[11px] font-bold text-slate-400 leading-relaxed">
-                      ฉันเข้าใจและยอมรับเงื่อนไข (ห้ามขายสินค้าที่ถูกล็อคซ้ำ {result.hasMainProduct && ", ห้ามเพิ่มสินค้าหลักซ้ำ"})
-                    </p>
-                  </button>
-                </div>
-
-                <button 
-                  disabled={!acceptedTerms}
-                  onClick={() => onSelectPhone(phone, result.hasMainProduct)}
-                  className="w-full flex items-center justify-center gap-2 py-3 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-800 disabled:text-slate-600 text-white rounded-xl text-sm font-black transition-all active:scale-95 shadow-lg shadow-blue-900/20"
-                >
-                  <span>ดำเนินการจองสินค้าอื่น</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
               </div>
             )}
           </div>
         </div>
+        <Search className="absolute -right-12 -bottom-12 w-48 h-48 text-slate-50 group-hover:text-slate-100 transition-colors duration-1000 rotate-12" />
       </div>
-
-      <Search className="absolute -right-12 -bottom-12 w-48 h-48 text-white/[0.03] group-hover:text-white/[0.05] transition-colors duration-1000 rotate-12" />
     </div>
   );
 }
