@@ -3,10 +3,19 @@
 import { cancelReservation } from "@/app/actions/reservation";
 import { format, differenceInDays, startOfDay } from "date-fns";
 import { th } from "date-fns/locale";
-import { Trash2, Phone, Calendar, Package, User, AlertCircle, Clock, Search, Star } from "lucide-react";
+import { Trash2, Phone, Calendar, Package, User, AlertCircle, Clock, Search, Star, Eye, Info, ListFilter } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useState, useMemo, useEffect } from "react";
+import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 interface ReservationListProps {
   reservations: any[];
@@ -23,6 +32,7 @@ export default function ReservationList({ reservations, onSuccess }: Reservation
   const { data: session } = useSession();
   const isAdmin = (session?.user as any)?.role === "ADMIN";
   const [mounted, setMounted] = useState(false);
+  const [selectedReservation, setSelectedReservation] = useState<any>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -141,8 +151,7 @@ export default function ReservationList({ reservations, onSuccess }: Reservation
                 const isNearExpiry = daysRemaining <= 3;
                 const isExpired = daysRemaining < 0;
 
-                // Handle legacy productCode or multiple items if included
-                const displayProduct = res.productCode || (res.items?.[0]?.productCode) || "-";
+                const mainProduct = res.items?.find((i: any) => i.isMainProduct)?.productCode || res.items?.[0]?.productCode || "-";
 
                 return (
                   <tr key={res.id} className={`group hover:bg-blue-50/30 transition-colors ${isNearExpiry ? 'bg-orange-50/20' : ''}`}>
@@ -158,11 +167,16 @@ export default function ReservationList({ reservations, onSuccess }: Reservation
                     <td className="px-6 py-4">
                       <div className="flex flex-col gap-1">
                         <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200 w-fit">
-                          {res.items?.some((i: any) => i.isMainProduct) && <Star className="w-3 h-3 fill-amber-400 text-amber-400" />}
-                          {displayProduct}
+                          <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                          {mainProduct}
                         </div>
                         {res.items && res.items.length > 1 && (
-                          <span className="text-[10px] text-slate-400 ml-1">+{res.items.length - 1} รายการอื่น</span>
+                          <button 
+                            onClick={() => setSelectedReservation(res)}
+                            className="text-[10px] text-blue-600 font-bold hover:underline text-left ml-1"
+                          >
+                            +{res.items.length - 1} รายการอื่น (ดูเพิ่ม)
+                          </button>
                         )}
                       </div>
                     </td>
@@ -195,13 +209,22 @@ export default function ReservationList({ reservations, onSuccess }: Reservation
                       </td>
                     )}
                     <td className="px-6 py-4 text-center">
-                      <button
-                        onClick={() => handleCancel(res.id)}
-                        className="inline-flex items-center justify-center p-2 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all active:scale-90"
-                        title="ยกเลิกการจอง"
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
+                      <div className="flex items-center justify-center gap-1">
+                        <button
+                          onClick={() => setSelectedReservation(res)}
+                          className="p-2 rounded-xl text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all active:scale-90"
+                          title="ดูรายละเอียด"
+                        >
+                          <Eye className="w-5 h-5" />
+                        </button>
+                        <button
+                          onClick={() => handleCancel(res.id)}
+                          className="p-2 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all active:scale-90"
+                          title="ยกเลิกการจอง"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -210,6 +233,103 @@ export default function ReservationList({ reservations, onSuccess }: Reservation
           </tbody>
         </table>
       </div>
+
+      {/* Detail Modal */}
+      <Dialog open={!!selectedReservation} onOpenChange={(open) => !open && setSelectedReservation(null)}>
+        <DialogContent className="max-w-lg rounded-3xl p-0 overflow-hidden border-none shadow-2xl">
+          {selectedReservation && (
+            <>
+              <DialogHeader className="p-6 bg-slate-900 text-white">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <DialogTitle className="text-2xl font-black tracking-tight flex items-center gap-2">
+                      <Package className="w-6 h-6 text-blue-400" />
+                      รายละเอียดการจอง
+                    </DialogTitle>
+                    <p className="text-slate-400 text-sm font-bold mt-1 uppercase tracking-widest">
+                      ID: {selectedReservation.id.slice(-8).toUpperCase()}
+                    </p>
+                  </div>
+                </div>
+              </DialogHeader>
+              
+              <div className="p-6 space-y-6 bg-white">
+                {/* Customer Info */}
+                <div className="grid grid-cols-2 gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                  <div>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">ชื่อลูกค้า</p>
+                    <p className="font-bold text-slate-900">{selectedReservation.customerName}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">เบอร์โทรศัพท์</p>
+                    <p className="font-mono font-bold text-blue-600">{selectedReservation.phoneNumber}</p>
+                  </div>
+                  <div className="col-span-2">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">ที่อยู่</p>
+                    <p className="text-sm font-medium text-slate-600 leading-relaxed">{selectedReservation.address}</p>
+                  </div>
+                </div>
+
+                {/* Items List */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between px-1">
+                    <h3 className="text-sm font-black text-slate-800 uppercase tracking-tight flex items-center gap-2">
+                      <ListFilter className="w-4 h-4 text-blue-600" />
+                      รายการสินค้า ({selectedReservation.items?.length || 0})
+                    </h3>
+                  </div>
+                  <div className="space-y-2 max-h-[240px] overflow-y-auto pr-1 custom-scrollbar">
+                    {selectedReservation.items?.map((item: any, idx: number) => (
+                      <div key={idx} className="flex items-center justify-between p-3 bg-white border border-slate-100 rounded-xl hover:border-blue-200 transition-colors shadow-sm">
+                        <div className="flex items-center gap-3">
+                          <div className={cn(
+                            "w-8 h-8 rounded-lg flex items-center justify-center font-black text-xs",
+                            item.isMainProduct ? "bg-amber-100 text-amber-600" : "bg-slate-100 text-slate-500"
+                          )}>
+                            {item.isMainProduct ? <Star className="w-4 h-4 fill-amber-500" /> : idx + 1}
+                          </div>
+                          <div>
+                            <p className="font-mono font-bold text-slate-900">{item.productCode}</p>
+                            {item.isMainProduct && <span className="text-[9px] font-black text-amber-600 uppercase">สินค้าหลัก</span>}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">จำนวน</p>
+                          <p className="font-bold text-slate-900">{item.quantity}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Notes & Summary */}
+                <div className="space-y-4 pt-2">
+                  {selectedReservation.notes && (
+                    <div className="p-3 bg-blue-50/50 rounded-xl border border-blue-100/50">
+                      <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1 flex items-center gap-1">
+                        <Info className="w-3 h-3" /> หมายเหตุ
+                      </p>
+                      <p className="text-xs font-medium text-slate-600">{selectedReservation.notes}</p>
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center justify-between p-4 bg-slate-900 rounded-2xl text-white">
+                    <div>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">ราคารวมทั้งสิ้น</p>
+                      <p className="text-xs text-slate-500 italic">รวมภาษีมูลค่าเพิ่มแล้ว</p>
+                    </div>
+                    <p className="text-2xl font-black text-blue-400">
+                      ฿{Number(selectedReservation.totalPrice).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+
+// Add these Lucide icons to the imports: Eye, Info, ListFilter

@@ -26,6 +26,7 @@ model Reservation {
   customerName    String
   phoneNumber     String
   address         String
+  productCode     String?           // Made optional for transition
   totalPrice      Decimal           @default(0)
   notes           String?
   status          Status            @default(ACTIVE)

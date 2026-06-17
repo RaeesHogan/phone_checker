@@ -126,8 +126,6 @@ export async function createReservation(data: any) {
               isMainProduct: item.isMainProduct,
             })),
           },
-          // Legacy field support for older queries if needed
-          productCode: validatedData.items.find(i => i.isMainProduct)?.productCode || validatedData.items[0].productCode,
         },
       });
 
