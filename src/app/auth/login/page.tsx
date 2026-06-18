@@ -45,7 +45,7 @@ export default function LoginPage() {
           <div className="inline-flex items-center justify-center bg-blue-600 p-3 rounded-2xl shadow-xl shadow-blue-600/20 mb-4">
             <Lock className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">เจ้าหน้าที่เข้าใช้งาน</h1>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">เว็บไซต์ตัวอย่าง</h1>
           <p className="text-slate-500">กรุณาระบุบัญชีผู้ใช้เพื่อจัดการระบบจอง</p>
         </div>
 
