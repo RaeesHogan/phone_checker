@@ -6,25 +6,25 @@ import { User, Phone, MapPin, Tag, FileText, Send, Loader2, Plus, Trash2, Dollar
 import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
 
-export default function ReservationForm({ 
-  initialPhone, 
+export default function ReservationForm({
+  initialPhone,
   hasMainProduct: passedHasMainProduct = false,
-  onSuccess 
-}: { 
-  initialPhone?: string, 
+  onSuccess
+}: {
+  initialPhone?: string,
   hasMainProduct?: boolean,
-  onSuccess?: () => void 
+  onSuccess?: () => void
 }) {
   const [loading, setLoading] = useState(false);
   const [checkingPhone, setCheckingPhone] = useState(false);
   const [phone, setPhone] = useState(initialPhone || "");
   const [autoHasMain, setAutoHasMain] = useState(passedHasMainProduct);
   const [lockedCodes, setLockedCodes] = useState<string[]>([]);
-  
-  const [items, setItems] = useState([{ 
-    productCode: "", 
-    quantity: 1, 
-    isMainProduct: !passedHasMainProduct 
+
+  const [items, setItems] = useState([{
+    productCode: "",
+    quantity: 1,
+    isMainProduct: !passedHasMainProduct
   }]);
   const [totalPrice, setTotalPrice] = useState<number | "">("");
   const formRef = useRef<HTMLFormElement>(null);
@@ -41,7 +41,7 @@ export default function ReservationForm({
             setAutoHasMain(data.hasMainProduct);
             const codes = data.lockedItems.map((i: any) => i.productCode);
             setLockedCodes(codes);
-            
+
             // If main product exists globally for this phone, force new items to NOT be main
             if (data.hasMainProduct) {
               setItems(prev => prev.map(item => ({ ...item, isMainProduct: false })));
@@ -77,10 +77,10 @@ export default function ReservationForm({
     if (initialPhone) {
       setPhone(initialPhone);
       setAutoHasMain(passedHasMainProduct);
-      setItems([{ 
-        productCode: "", 
-        quantity: 1, 
-        isMainProduct: !passedHasMainProduct 
+      setItems([{
+        productCode: "",
+        quantity: 1,
+        isMainProduct: !passedHasMainProduct
       }]);
     }
   }, [initialPhone, passedHasMainProduct]);
@@ -123,7 +123,7 @@ export default function ReservationForm({
     const formData = new FormData(e.currentTarget);
     const customerName = (formData.get("customerName") as string)?.trim();
     const address = (formData.get("address") as string)?.trim();
-    
+
     if (!customerName) {
       toast.error("กรุณากรอกชื่อลูกค้า");
       return;
@@ -160,7 +160,7 @@ export default function ReservationForm({
       toast.error("กรุณาเลือกสินค้าหลัก 1 รายการ");
       return;
     }
-    
+
     setLoading(true);
 
     const payload = {
@@ -199,7 +199,7 @@ export default function ReservationForm({
           </div>
           <h2 className="text-2xl font-black text-slate-800 tracking-tight">เพิ่มการจองใหม่ (หลายรายการ)</h2>
         </div>
-        
+
         {autoHasMain && (
           <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-600 rounded-full border border-amber-200 animate-in fade-in zoom-in-95">
             <AlertCircle className="w-3.5 h-3.5" />
@@ -212,19 +212,19 @@ export default function ReservationForm({
       {lockedCodes.length > 0 && (
         <div className="mb-6 p-4 bg-slate-50 border border-slate-200 rounded-2xl animate-in slide-in-from-top-2 duration-500">
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1 flex items-center gap-2">
-            <AlertCircle className="w-3.5 h-3.5 text-amber-500" /> 
+            <AlertCircle className="w-3.5 h-3.5 text-amber-500" />
             รายการที่เบอร์นี้จองไว้แล้ว (ห้ามจองซ้ำ)
           </p>
           <div className="flex flex-wrap gap-2">
             {lockedCodes.map((code) => {
               const isMain = code.includes("(หลัก)") || (autoHasMain && lockedCodes.indexOf(code) === 0); // Simplified check for preview
               return (
-                <span 
-                  key={code} 
+                <span
+                  key={code}
                   className={cn(
                     "px-3 py-1 rounded-xl text-[11px] font-black border flex items-center gap-1.5 shadow-sm bg-white",
                     autoHasMain && lockedCodes.indexOf(code) === 0
-                      ? "text-amber-600 border-amber-200 shadow-amber-100/50" 
+                      ? "text-amber-600 border-amber-200 shadow-amber-100/50"
                       : "text-slate-600 border-slate-200"
                   )}
                 >
@@ -317,7 +317,7 @@ export default function ReservationForm({
           <div className="space-y-3">
             {items.map((item, index) => {
               const isLocked = lockedCodes.includes(item.productCode.trim()) && item.productCode.trim() !== "";
-              
+
               return (
                 <div key={index} className="flex gap-2 items-start animate-in fade-in slide-in-from-top-1 duration-200">
                   <div className={cn(
@@ -358,8 +358,8 @@ export default function ReservationForm({
                         onClick={() => updateItem(index, "isMainProduct", true)}
                         className={cn(
                           "p-1.5 rounded-lg transition-all",
-                          item.isMainProduct 
-                            ? "bg-blue-600 text-white shadow-md shadow-blue-200" 
+                          item.isMainProduct
+                            ? "bg-blue-600 text-white shadow-md shadow-blue-200"
                             : "bg-white text-slate-300 border border-slate-200 hover:border-blue-300",
                           autoHasMain && "opacity-10 cursor-not-allowed grayscale"
                         )}
@@ -412,7 +412,7 @@ export default function ReservationForm({
           <textarea
             name="notes"
             rows={2}
-            placeholder="ระบุข้อมูลเพิ่มเติม (ถ้ามี)"
+            placeholder="ระบุข้อมูลเพิ่มเติม (ถ้ามี) โปรดอย่าใช้เป็น Note ในการช่วยจำสินค้าย่อย ระบบจะไม่จองสินค้าให้คุณ"
             className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 focus:bg-white transition-all outline-none resize-none"
           ></textarea>
         </div>

@@ -26,6 +26,12 @@ function DashboardContent() {
   
   const [stats, setStats] = useState({ total: 0, active: 0, expired: 0 });
   const [recentReservations, setRecentReservations] = useState<any[]>([]);
+  const [pagination, setPagination] = useState({ totalItems: 0, totalPages: 1, currentPage: 1, limit: 10 });
+  
+  const [page, setPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortDays, setSortDays] = useState("default");
+  
   const [initialPhone, setInitialPhone] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(true);
 
@@ -34,10 +40,17 @@ function DashboardContent() {
     if (status !== "authenticated") return;
     
     try {
-      const res = await fetch("/api/dashboard/data", { cache: "no-store" });
+      const url = new URL("/api/dashboard/data", window.location.origin);
+      url.searchParams.set("page", page.toString());
+      url.searchParams.set("limit", "10");
+      url.searchParams.set("sort", sortDays);
+      if (searchQuery) url.searchParams.set("search", searchQuery);
+
+      const res = await fetch(url.toString(), { cache: "no-store" });
       const data = await res.json();
       if (data.stats) setStats(data.stats);
       if (data.recent) setRecentReservations(data.recent);
+      if (data.pagination) setPagination(data.pagination);
     } catch (error) {
       console.error("Failed to fetch dashboard data");
     } finally {
@@ -45,10 +58,10 @@ function DashboardContent() {
     }
   };
 
-  // Fetch Stats and Data on mount
+  // Fetch Stats and Data on mount and when query params change
   useEffect(() => {
     fetchData();
-  }, [status]);
+  }, [status, page, searchQuery, sortDays]);
 
   if (status === "loading" || loading) {
     return (
@@ -171,7 +184,7 @@ function DashboardContent() {
                   <ListFilter className="w-5 h-5 text-blue-600" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-black text-slate-800 tracking-tight">รายการจองล่าสุด (Active)</h2>
+                  <h2 className="text-xl font-black text-slate-800 tracking-tight">รายการจองทั้งหมด (Active)</h2>
                   <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">ตรวจสอบและจัดการเบอร์ที่จองไว้</p>
                 </div>
               </div>
@@ -179,7 +192,18 @@ function DashboardContent() {
                 LIVE STATUS
               </div>
             </div>
-            <ReservationList reservations={recentReservations} onSuccess={fetchData} />
+            <ReservationList 
+              reservations={recentReservations} 
+              onSuccess={fetchData} 
+              isAdmin={isAdmin}
+              page={page}
+              setPage={setPage}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              sortDays={sortDays}
+              setSortDays={setSortDays}
+              pagination={pagination}
+            />
           </div>
 
           {/* Reservation Form (Restored) */}

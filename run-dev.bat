@@ -3,5 +3,5 @@ echo ==========================================
 echo   STARTING DEVELOPMENT SERVER
 echo ==========================================
 echo.
-call pnpm dev
+call npm run dev
 pause

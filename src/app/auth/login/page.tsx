@@ -4,6 +4,7 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Lock, User, KeyRound, AlertCircle, ChevronRight, Loader2 } from "lucide-react";
+import DisclaimerModal from "@/components/ui/DisclaimerModal";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -38,6 +39,8 @@ export default function LoginPage() {
   };
 
   return (
+    <>
+    <DisclaimerModal />
     <div className="flex min-h-screen items-center justify-center bg-slate-50 p-6">
       <div className="w-full max-w-[420px] space-y-8 animate-in fade-in zoom-in-95 duration-500">
         {/* Branding */}
@@ -111,5 +114,6 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

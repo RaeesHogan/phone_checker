@@ -5,7 +5,7 @@ import { format, differenceInDays, startOfDay } from "date-fns";
 import { th } from "date-fns/locale";
 import { Trash2, Phone, Calendar, Package, User, AlertCircle, Clock, Search, Star, Eye, Info, ListFilter } from "lucide-react";
 import { useSession } from "next-auth/react";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
 import {
@@ -17,9 +17,19 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
+import { ChevronLeft, ChevronRight } from "lucide-react";
+
 interface ReservationListProps {
   reservations: any[];
   onSuccess?: () => void;
+  isAdmin?: boolean;
+  page?: number;
+  setPage?: (page: number) => void;
+  searchQuery?: string;
+  setSearchQuery?: (query: string) => void;
+  sortDays?: string;
+  setSortDays?: (sort: string) => void;
+  pagination?: { totalItems: number, totalPages: number, currentPage: number, limit: number };
 }
 
 const getDaysRemaining = (date: string) => {
@@ -28,41 +38,42 @@ const getDaysRemaining = (date: string) => {
   return differenceInDays(expiry, today);
 };
 
-export default function ReservationList({ reservations, onSuccess }: ReservationListProps) {
+export default function ReservationList({ 
+  reservations, 
+  onSuccess,
+  page = 1,
+  setPage,
+  searchQuery = "",
+  setSearchQuery,
+  sortDays = "default",
+  setSortDays,
+  pagination = { totalItems: 0, totalPages: 1, currentPage: 1, limit: 10 }
+}: ReservationListProps) {
   const { data: session } = useSession();
   const isAdmin = (session?.user as any)?.role === "ADMIN";
   const [mounted, setMounted] = useState(false);
   const [selectedReservation, setSelectedReservation] = useState<any>(null);
+  
+  // Local state for debounced search
+  const [searchInput, setSearchInput] = useState(searchQuery);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  const [searchCreator, setSearchCreator] = useState("");
-  const [sortDays, setSortDays] = useState<"default" | "asc" | "desc">("default");
+  // Debounce search
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      if (setSearchQuery && searchInput !== searchQuery) {
+        setSearchQuery(searchInput);
+        if (setPage) setPage(1); // Reset to page 1 on new search
+      }
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [searchInput, setSearchQuery, setPage, searchQuery]);
 
-  const filteredReservations = useMemo(() => {
-    let result = [...reservations];
-
-    if (isAdmin && searchCreator.trim()) {
-      const query = searchCreator.toLowerCase().trim();
-      result = result.filter(res => {
-        const username = res.user?.username?.toLowerCase() || "";
-        const fullName = res.user?.fullName?.toLowerCase() || "";
-        return username.includes(query) || fullName.includes(query);
-      });
-    }
-
-    if (sortDays !== "default") {
-      result.sort((a, b) => {
-        const daysA = getDaysRemaining(a.expirationDate);
-        const daysB = getDaysRemaining(b.expirationDate);
-        return sortDays === "asc" ? daysA - daysB : daysB - daysA;
-      });
-    }
-
-    return result;
-  }, [reservations, isAdmin, searchCreator, sortDays]);
+  // We no longer filter client-side, the 'reservations' prop is already filtered/sorted by the API
+  const filteredReservations = reservations;
 
   const handleCancel = async (id: string) => {
     if (!window.confirm("ยืนยันการยกเลิกการจองนี้?")) return;
@@ -89,7 +100,7 @@ export default function ReservationList({ reservations, onSuccess }: Reservation
     return <div className="min-h-[400px] flex items-center justify-center"><Clock className="w-6 h-6 animate-spin text-slate-200" /></div>;
   }
 
-  if (reservations.length === 0) {
+  if (reservations.length === 0 && !searchQuery) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-slate-400 space-y-3">
         <Package className="w-12 h-12 opacity-20" />
@@ -102,25 +113,26 @@ export default function ReservationList({ reservations, onSuccess }: Reservation
     <div className="flex flex-col">
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-center px-6 py-4 border-b border-slate-100 bg-slate-50/50">
         <div className="w-full sm:flex-1 flex items-center gap-4">
-          {isAdmin && (
-            <div className="relative w-full sm:max-w-xs">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-4 w-4 text-slate-400" />
-              </div>
-              <input
-                type="text"
-                placeholder="ค้นหาคนจอง..."
-                value={searchCreator}
-                onChange={(e) => setSearchCreator(e.target.value)}
-                className="block w-full pl-9 pr-3 py-2 border border-slate-200 rounded-xl leading-5 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all shadow-sm"
-              />
+          <div className="relative w-full sm:max-w-xs">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-4 w-4 text-slate-400" />
             </div>
-          )}
+            <input
+              type="text"
+              placeholder="ค้นหาเบอร์ลูกค้า หรือ คนจอง..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="block w-full pl-9 pr-3 py-2 border border-slate-200 rounded-xl leading-5 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all shadow-sm"
+            />
+          </div>
         </div>
         <div className="w-full sm:w-auto flex items-center gap-2">
           <select
             value={sortDays}
-            onChange={(e) => setSortDays(e.target.value as any)}
+            onChange={(e) => {
+              if (setSortDays) setSortDays(e.target.value);
+              if (setPage) setPage(1);
+            }}
             className="block w-full sm:w-auto pl-3 pr-8 py-2 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-slate-700 font-medium shadow-sm"
           >
             <option value="default">เรียงตามวันที่เหลือ (เริ่มต้น)</option>
@@ -245,6 +257,47 @@ export default function ReservationList({ reservations, onSuccess }: Reservation
         </table>
       </div>
 
+      {/* Pagination UI */}
+      {pagination.totalPages > 1 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 border-t border-slate-100 bg-white gap-4">
+          <div className="text-sm font-medium text-slate-500">
+            แสดง {((pagination.currentPage - 1) * pagination.limit) + 1} ถึง {Math.min(pagination.currentPage * pagination.limit, pagination.totalItems)} จากทั้งหมด {pagination.totalItems} รายการ
+          </div>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setPage && setPage(pagination.currentPage - 1)}
+              disabled={pagination.currentPage === 1}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-slate-400 transition-colors"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            
+            {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map(pageNum => (
+              <button
+                key={pageNum}
+                onClick={() => setPage && setPage(pageNum)}
+                className={cn(
+                  "w-8 h-8 rounded-lg text-sm font-bold flex items-center justify-center transition-colors",
+                  pagination.currentPage === pageNum 
+                    ? "bg-blue-600 text-white shadow-sm shadow-blue-600/20" 
+                    : "text-slate-600 hover:bg-slate-100"
+                )}
+              >
+                {pageNum}
+              </button>
+            ))}
+
+            <button
+              onClick={() => setPage && setPage(pagination.currentPage + 1)}
+              disabled={pagination.currentPage === pagination.totalPages}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-slate-400 transition-colors"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Detail Modal */}
       <Dialog open={!!selectedReservation} onOpenChange={(open) => !open && setSelectedReservation(null)}>
         <DialogContent className="max-w-lg rounded-3xl p-0 overflow-hidden border-none shadow-2xl">
@@ -342,5 +395,3 @@ export default function ReservationList({ reservations, onSuccess }: Reservation
     </div>
   );
 }
-
-// Add these Lucide icons to the imports: Eye, Info, ListFilter

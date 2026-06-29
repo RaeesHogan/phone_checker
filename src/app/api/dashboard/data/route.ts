@@ -14,6 +14,16 @@ export async function GET(req: NextRequest) {
   const userRole = (session.user as any).role;
   const isAdmin = userRole === "ADMIN";
 
+  // Parse Query Params
+  const { searchParams } = new URL(req.url);
+  const page = parseInt(searchParams.get("page") || "1");
+  const limit = parseInt(searchParams.get("limit") || "10");
+  const search = searchParams.get("search") || "";
+  const sort = searchParams.get("sort") || "default";
+
+  const skip = (page - 1) * limit;
+
+  // Base Filter for Ownership
   const baseFilter: any = {};
   if (!isAdmin) {
     baseFilter.createdBy = userId;
@@ -22,71 +32,84 @@ export async function GET(req: NextRequest) {
   try {
     const now = new Date();
 
+    // 1. Stats Data (Unaffected by pagination/search)
     const [total, active, expired] = await Promise.all([
-      // Total = active + expired (ไม่รวม CANCELLED เพราะถูกยกเลิกแล้ว)
       prisma.reservation.count({
-        where: {
-          ...baseFilter,
-          status: { not: "CANCELLED" }
-        }
+        where: { ...baseFilter, status: { not: "CANCELLED" } }
       }),
-      // Active = status ACTIVE และยังไม่หมดอายุ
       prisma.reservation.count({
-        where: {
-          ...baseFilter,
-          status: "ACTIVE",
-          expirationDate: { gt: now }
-        }
+        where: { ...baseFilter, status: "ACTIVE", expirationDate: { gt: now } }
       }),
-      // Expired = status EXPIRED ใน DB หรือ status ACTIVE แต่เลยวันหมดอายุแล้ว
       prisma.reservation.count({
         where: {
           ...baseFilter,
           OR: [
             { status: "EXPIRED" },
-            {
-              status: "ACTIVE",
-              expirationDate: { lte: now }
-            }
+            { status: "ACTIVE", expirationDate: { lte: now } }
           ]
         }
       }),
     ]);
 
-    const recent = await prisma.reservation.findMany({
-      where: {
-        ...baseFilter,
-        status: "ACTIVE",
-        expirationDate: { gt: now }
-      },
-      include: {
-        user: {
-          select: {
-            fullName: true,
-            username: true,
-          }
+    // 2. Build Filter for the List
+    const listFilter: any = {
+      ...baseFilter,
+      status: "ACTIVE",
+      expirationDate: { gt: now }
+    };
+
+    if (search.trim()) {
+      const searchStr = search.trim();
+      const searchConditions: any[] = [
+        { phoneNumber: { contains: searchStr } },
+        { customerName: { contains: searchStr, mode: 'insensitive' } }
+      ];
+
+      if (isAdmin) {
+        searchConditions.push(
+          { user: { fullName: { contains: searchStr, mode: 'insensitive' } } },
+          { user: { username: { contains: searchStr, mode: 'insensitive' } } }
+        );
+      }
+
+      listFilter.AND = [{ OR: searchConditions }];
+    }
+
+    // 3. Sorting
+    let orderBy: any = { expirationDate: "asc" }; // default (days remaining asc)
+    if (sort === "desc") {
+      orderBy = { expirationDate: "desc" };
+    }
+
+    // 4. Fetch Paginated List and Total Count
+    const [totalItems, recent] = await Promise.all([
+      prisma.reservation.count({ where: listFilter }),
+      prisma.reservation.findMany({
+        where: listFilter,
+        include: {
+          user: { select: { fullName: true, username: true } },
+          items: { select: { productCode: true, isMainProduct: true, quantity: true } }
         },
-        items: {
-          select: {
-            productCode: true,
-            isMainProduct: true,
-            quantity: true,
-          }
-        }
-      },
-      orderBy: { expirationDate: "asc" },
-      take: 20,
-    });
+        orderBy,
+        skip,
+        take: limit,
+      })
+    ]);
+
+    const totalPages = Math.ceil(totalItems / limit);
 
     return NextResponse.json({
-      stats: { 
-        total,
-        active, 
-        expired 
-      },
-      recent
+      stats: { total, active, expired },
+      recent,
+      pagination: {
+        totalItems,
+        totalPages,
+        currentPage: page,
+        limit
+      }
     });
   } catch (error) {
+    console.error("Dashboard API Error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
