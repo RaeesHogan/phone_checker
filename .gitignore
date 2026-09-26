@@ -1,6 +1,8 @@
 # dependencies
 /node_modules
 /.pnpm-debug.log*
+# any nested node_modules (e.g. committed prisma engine cache)
+node_modules/
 
 # next.js
 /.next/
