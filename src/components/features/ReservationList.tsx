@@ -240,15 +240,13 @@ export default function ReservationList({
                         >
                           <Eye className="w-5 h-5" />
                         </button>
-                        {isAdmin && (
-                                                <button
-                                                  onClick={() => handleCancel(res.id)}
-                                                  className="p-2 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all active:scale-90"
-                                                  title="ยกเลิกการจอง (Admin only)"
-                                                >
-                                                  <Trash2 className="w-5 h-5" />
-                                                </button>
-                                              )}
+                        <button
+                          onClick={() => handleCancel(res.id)}
+                          className="p-2 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all active:scale-90"
+                          title="ยกเลิกการจอง"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
                       </div>
                     </td>
                   </tr>

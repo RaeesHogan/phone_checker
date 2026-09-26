@@ -178,13 +178,15 @@ export async function cancelReservation(id: string) {
       return { error: "ไม่พบข้อมูลการจอง" };
     }
 
-    // 2. Authorization Check: Only Admin can cancel
-        const isAdmin = userRole === Role.ADMIN;
+    // 2. Authorization Check: Admin can cancel any reservation,
+    //    a regular USER can only cancel their own.
+    const isAdmin = userRole === Role.ADMIN;
+    const isOwner = reservation.createdBy === userId;
 
-        if (!isAdmin) {
-          console.warn(`[SECURITY ALERT] Unauthorized cancel attempt by ${userId} (Role: ${userRole}) on reservation ${id}`);
-          return { error: "ไม่สามารถลบได้ โปรดแจ้งหัวหน้างานหรือผู้ดูแลระบบ" };
-        }
+    if (!isAdmin && !isOwner) {
+      console.warn(`[SECURITY ALERT] Unauthorized cancel attempt by ${userId} (Role: ${userRole}) on reservation ${id}`);
+      return { error: "ไม่สามารถลบได้ โปรดแจ้งหัวหน้างานหรือผู้ดูแลระบบ" };
+    }
 
     // 3. Update status (Sync to items for strict locking index)
     // Note: We use a transaction to ensure both reservation and its items are cancelled together
@@ -202,16 +204,17 @@ export async function cancelReservation(id: string) {
     console.log(`[DEBUG] Reservation ${id} and its items successfully cancelled`);
 
     // 4. Audit Log
-        await prisma.auditLog.create({
-          data: {
-            userId,
-            action: "CANCEL_RESERVATION",
-            details: { 
-              reservationId: id, 
-              authorizedBy: userRole, 
-            },
-          },
-        });
+    await prisma.auditLog.create({
+      data: {
+        userId,
+        action: "CANCEL_RESERVATION",
+        details: {
+          reservationId: id,
+          authorizedBy: userRole,
+          wasOwner: isOwner,
+        },
+      },
+    });
 
     revalidatePath("/dashboard");
     return { success: true };

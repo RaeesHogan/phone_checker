@@ -25,18 +25,36 @@ export async function GET(req: NextRequest) {
       },
     });
 
+    // 2.5 Sync the child rows too.
+    // The strict main-product lock is enforced by a partial unique index on
+    // ReservationItem("phoneNumber") WHERE "isMainProduct" = true AND "status" = 'ACTIVE',
+    // so items left ACTIVE would keep the phone number locked forever.
+    const staleItems = await prisma.reservationItem.updateMany({
+      where: {
+        status: "ACTIVE",
+        reservation: {
+          status: "EXPIRED",
+          expirationDate: { lte: now },
+        },
+      },
+      data: {
+        status: "EXPIRED",
+      },
+    });
+
     // 3. Log success
     await prisma.systemLog.create({
       data: {
         level: "INFO",
         source: "CRON_JOB_EXPIRATION",
-        message: `Updated ${result.count} reservations to EXPIRED status.`,
+        message: `Updated ${result.count} reservations and ${staleItems.count} items to EXPIRED status.`,
       },
     });
 
-    return NextResponse.json({ 
-      success: true, 
-      expiredCount: result.count 
+    return NextResponse.json({
+      success: true,
+      expiredCount: result.count,
+      expiredItemCount: staleItems.count,
     });
   } catch (error: any) {
     console.error("Cron Job Error:", error);
