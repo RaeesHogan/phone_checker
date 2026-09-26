@@ -16,8 +16,16 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 
 interface ReservationListProps {
   reservations: any[];
@@ -30,12 +38,40 @@ interface ReservationListProps {
   sortDays?: string;
   setSortDays?: (sort: string) => void;
   pagination?: { totalItems: number, totalPages: number, currentPage: number, limit: number };
+  limit?: number;
+  setLimit?: (limit: number) => void;
 }
 
 const getDaysRemaining = (date: string) => {
   const today = startOfDay(new Date());
   const expiry = startOfDay(new Date(date));
   return differenceInDays(expiry, today);
+};
+
+// สร้างลิสต์เลขหน้าแบบย่อ พร้อมจุดไข่มุ่น เพื่อไม่ให้ปุ่มยาวเกินไปเมื่อมีหลายสิบหน้า
+// เช่น 1 2 3 4 5 … 46  |  ผ่าน getPageList(3, 10)  ->  [1, '…', 2, 3, 4, '…', 10]
+const getPageList = (currentPage: number, totalPages: number): (number | "ellipsis")[] => {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, i) => i + 1);
+  }
+
+  const pages = new Set<number>([1, totalPages]);
+  const start = Math.max(2, currentPage - 1);
+  const end = Math.min(totalPages - 1, currentPage + 1);
+
+  for (let i = start; i <= end; i++) pages.add(i);
+
+  const sorted = [...pages].sort((a, b) => a - b);
+  const result: (number | "ellipsis")[] = [];
+  let previous = 0;
+
+  for (const page of sorted) {
+    if (previous && page - previous > 1) result.push("ellipsis");
+    result.push(page);
+    previous = page;
+  }
+
+  return result;
 };
 
 export default function ReservationList({ 
@@ -47,7 +83,9 @@ export default function ReservationList({
   setSearchQuery,
   sortDays = "default",
   setSortDays,
-  pagination = { totalItems: 0, totalPages: 1, currentPage: 1, limit: 10 }
+  pagination = { totalItems: 0, totalPages: 1, currentPage: 1, limit: 10 },
+  limit,
+  setLimit
 }: ReservationListProps) {
   const { data: session } = useSession();
   const isAdmin = (session?.user as any)?.role === "ADMIN";
@@ -259,41 +297,81 @@ export default function ReservationList({
 
       {/* Pagination UI */}
       {pagination.totalPages > 1 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 border-t border-slate-100 bg-white gap-4">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-slate-100 bg-white">
           <div className="text-sm font-medium text-slate-500">
-            แสดง {((pagination.currentPage - 1) * pagination.limit) + 1} ถึง {Math.min(pagination.currentPage * pagination.limit, pagination.totalItems)} จากทั้งหมด {pagination.totalItems} รายการ
+            หน้า <span className="text-slate-900 font-bold">{pagination.currentPage}</span> จาก{" "}
+            <span className="text-slate-900 font-bold">{pagination.totalPages}</span>{" "}
+            · แสดง {((pagination.currentPage - 1) * pagination.limit) + 1}–{Math.min(pagination.currentPage * pagination.limit, pagination.totalItems)} จาก {pagination.totalItems} รายการ
           </div>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setPage && setPage(pagination.currentPage - 1)}
-              disabled={pagination.currentPage === 1}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-slate-400 transition-colors"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            
-            {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map(pageNum => (
-              <button
-                key={pageNum}
-                onClick={() => setPage && setPage(pageNum)}
-                className={cn(
-                  "w-8 h-8 rounded-lg text-sm font-bold flex items-center justify-center transition-colors",
-                  pagination.currentPage === pageNum 
-                    ? "bg-blue-600 text-white shadow-sm shadow-blue-600/20" 
-                    : "text-slate-600 hover:bg-slate-100"
-                )}
-              >
-                {pageNum}
-              </button>
-            ))}
 
-            <button
-              onClick={() => setPage && setPage(pagination.currentPage + 1)}
-              disabled={pagination.currentPage === pagination.totalPages}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-slate-400 transition-colors"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
+          <div className="flex items-center gap-3">
+            {setLimit && (
+              <label className="flex items-center gap-2 text-sm text-slate-500">
+                <span className="hidden sm:inline">ต่อหน้า</span>
+                <NativeSelect
+                  aria-label="จำนวนรายการต่อหน้า"
+                  className="w-24"
+                  value={String(limit ?? pagination.limit)}
+                  onChange={(event) => {
+                    const next = Number(event.target.value);
+                    if (Number.isFinite(next) && setLimit) {
+                      setLimit(next);
+                      if (setPage) setPage(1);
+                    }
+                  }}
+                >
+                  <NativeSelectOption value="10">10 รายการ</NativeSelectOption>
+                  <NativeSelectOption value="20">20 รายการ</NativeSelectOption>
+                  <NativeSelectOption value="50">50 รายการ</NativeSelectOption>
+                  <NativeSelectOption value="100">100 รายการ</NativeSelectOption>
+                </NativeSelect>
+              </label>
+            )}
+
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    href="#"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      if (setPage) setPage(pagination.currentPage - 1);
+                    }}
+                  />
+                </PaginationItem>
+
+                {getPageList(pagination.currentPage, pagination.totalPages).map((pageNum, index) =>
+                  pageNum === "ellipsis" ? (
+                    <PaginationItem key={`ellipsis-${index}`}>
+                      <PaginationEllipsis />
+                    </PaginationItem>
+                  ) : (
+                    <PaginationItem key={pageNum}>
+                      <PaginationLink
+                        href="#"
+                        isActive={pagination.currentPage === pageNum}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          if (setPage) setPage(pageNum);
+                        }}
+                      >
+                        {pageNum}
+                      </PaginationLink>
+                    </PaginationItem>
+                  )
+                )}
+
+                <PaginationItem>
+                  <PaginationNext
+                    href="#"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      if (setPage) setPage(pagination.currentPage + 1);
+                    }}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
           </div>
         </div>
       )}

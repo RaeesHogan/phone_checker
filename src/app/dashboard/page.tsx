@@ -31,6 +31,7 @@ function DashboardContent() {
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortDays, setSortDays] = useState("default");
+  const [limit, setLimit] = useState(10);
   
   const [initialPhone, setInitialPhone] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(true);
@@ -42,7 +43,7 @@ function DashboardContent() {
     try {
       const url = new URL("/api/dashboard/data", window.location.origin);
       url.searchParams.set("page", page.toString());
-      url.searchParams.set("limit", "10");
+      url.searchParams.set("limit", limit.toString());
       url.searchParams.set("sort", sortDays);
       if (searchQuery) url.searchParams.set("search", searchQuery);
 
@@ -61,7 +62,7 @@ function DashboardContent() {
   // Fetch Stats and Data on mount and when query params change
   useEffect(() => {
     fetchData();
-  }, [status, page, searchQuery, sortDays]);
+  }, [status, page, searchQuery, sortDays, limit]);
 
   if (status === "loading" || loading) {
     return (
@@ -203,6 +204,8 @@ function DashboardContent() {
               sortDays={sortDays}
               setSortDays={setSortDays}
               pagination={pagination}
+              limit={limit}
+              setLimit={setLimit}
             />
           </div>
 
