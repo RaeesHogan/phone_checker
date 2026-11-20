@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { SystemLog } from "@prisma/client";
+import { syncExpiredReservationStatuses } from "@/lib/reservation-status";
 
 export async function GET(req: NextRequest) {
   // 1. Verify Authorization (Cron Secret)
@@ -12,49 +12,25 @@ export async function GET(req: NextRequest) {
   try {
     const now = new Date();
 
-    // 2. Find and update active reservations that have passed expiration date
-    const result = await prisma.reservation.updateMany({
-      where: {
-        status: "ACTIVE",
-        expirationDate: {
-          lte: now,
-        },
-      },
-      data: {
-        status: "EXPIRED",
-      },
-    });
-
-    // 2.5 Sync the child rows too.
-    // The strict main-product lock is enforced by a partial unique index on
-    // ReservationItem("phoneNumber") WHERE "isMainProduct" = true AND "status" = 'ACTIVE',
-    // so items left ACTIVE would keep the phone number locked forever.
-    const staleItems = await prisma.reservationItem.updateMany({
-      where: {
-        status: "ACTIVE",
-        reservation: {
-          status: "EXPIRED",
-          expirationDate: { lte: now },
-        },
-      },
-      data: {
-        status: "EXPIRED",
-      },
-    });
+    // Parent and child status must change together. ReservationItem has a
+    // partial ACTIVE lock, so an ACTIVE child must never outlive its parent.
+    const result = await prisma.$transaction(async (tx) =>
+      syncExpiredReservationStatuses(tx, now),
+    );
 
     // 3. Log success
     await prisma.systemLog.create({
       data: {
         level: "INFO",
         source: "CRON_JOB_EXPIRATION",
-        message: `Updated ${result.count} reservations and ${staleItems.count} items to EXPIRED status.`,
+        message: `Updated ${result.expiredReservations} reservations and ${result.expiredItems} items to EXPIRED status.`,
       },
     });
 
     return NextResponse.json({
       success: true,
-      expiredCount: result.count,
-      expiredItemCount: staleItems.count,
+      expiredCount: result.expiredReservations,
+      expiredItemCount: result.expiredItems,
     });
   } catch (error: any) {
     console.error("Cron Job Error:", error);

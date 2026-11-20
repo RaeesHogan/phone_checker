@@ -6,6 +6,7 @@ import { normalizePhoneNumber, isValidThaiPhone } from "@/lib/phone-utils";
 import { revalidatePath } from "next/cache";
 import { addDays } from "date-fns";
 import { Status, Role } from "@prisma/client";
+import { syncExpiredReservationStatuses } from "@/lib/reservation-status";
 
 import { z } from "zod";
 
@@ -68,13 +69,19 @@ export async function createReservation(data: any) {
   try {
     // 2. Transactional Validation (Product-Level Locking)
     return await prisma.$transaction(async (tx) => {
+      const now = new Date();
+
+      // Cron is asynchronous. Expire this phone's stale records before
+      // checking locks so a missed cron run cannot block a new reservation.
+      await syncExpiredReservationStatuses(tx, now, validatedData.phoneNumber);
+
       // Find all ACTIVE reservation items for this phone
       const activeItems = await tx.reservationItem.findMany({
         where: {
           reservation: {
             phoneNumber: validatedData.phoneNumber,
             status: "ACTIVE",
-            expirationDate: { gt: new Date() },
+            expirationDate: { gt: now },
           },
         },
         select: { productCode: true },
@@ -95,6 +102,10 @@ export async function createReservation(data: any) {
             phoneNumber: validatedData.phoneNumber,
             isMainProduct: true,
             status: "ACTIVE",
+            reservation: {
+              status: "ACTIVE",
+              expirationDate: { gt: now },
+            },
           }
         });
 
