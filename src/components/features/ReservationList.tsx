@@ -48,6 +48,45 @@ const getDaysRemaining = (date: string) => {
   return differenceInDays(expiry, today);
 };
 
+const getExpiryDisplay = (date: string) => {
+  const expiryDate = new Date(date);
+  const daysRemaining = getDaysRemaining(date);
+
+  if (expiryDate <= new Date()) {
+    return {
+      daysRemaining,
+      label: "หมดอายุแล้ว",
+      badgeClass: "bg-red-100 text-red-700 border-red-200",
+      rowClass: "bg-red-50/20",
+    };
+  }
+
+  if (daysRemaining === 0) {
+    return {
+      daysRemaining,
+      label: "หมดคืนนี้",
+      badgeClass: "bg-orange-100 text-orange-700 border-orange-200",
+      rowClass: "bg-orange-50/30",
+    };
+  }
+
+  if (daysRemaining <= 3) {
+    return {
+      daysRemaining,
+      label: `เหลือ ${daysRemaining} วัน`,
+      badgeClass: "bg-orange-100 text-orange-700 border-orange-200",
+      rowClass: "bg-orange-50/20",
+    };
+  }
+
+  return {
+    daysRemaining,
+    label: `เหลือ ${daysRemaining} วัน`,
+    badgeClass: "bg-blue-50 text-blue-700 border-blue-200",
+    rowClass: "",
+  };
+};
+
 // สร้างลิสต์เลขหน้าแบบย่อ พร้อมจุดไข่มุ่น เพื่อไม่ให้ปุ่มยาวเกินไปเมื่อมีหลายสิบหน้า
 // เช่น 1 2 3 4 5 … 46  |  ผ่าน getPageList(3, 10)  ->  [1, '…', 2, 3, 4, '…', 10]
 const getPageList = (currentPage: number, totalPages: number): (number | "ellipsis")[] => {
@@ -197,16 +236,14 @@ export default function ReservationList({
               <tr><td colSpan={isAdmin ? 6 : 5} className="px-6 py-12 text-center text-slate-500 font-medium">ไม่พบรายการจองที่ตรงกับการค้นหา</td></tr>
             ) : (
               filteredReservations.map((res) => {
-                const daysRemaining = getDaysRemaining(res.expirationDate);
-                const isNearExpiry = daysRemaining <= 3;
-                const isExpired = daysRemaining < 0;
+                const expiryDisplay = getExpiryDisplay(res.expirationDate);
 
                 const mainItem = res.items?.find((i: any) => i.isMainProduct);
                 const displayProduct = mainItem?.productCode || res.items?.[0]?.productCode || "-";
                 const isMain = !!mainItem;
 
                 return (
-                  <tr key={res.id} className={`group hover:bg-blue-50/30 transition-colors ${isNearExpiry ? 'bg-orange-50/20' : ''}`}>
+                  <tr key={res.id} className={`group hover:bg-blue-50/30 transition-colors ${expiryDisplay.rowClass}`}>
                     <td className="px-6 py-4">
                       <div className="flex flex-col">
                         <span className="font-bold text-slate-900 group-hover:text-blue-700 transition-colors">{res.customerName}</span>
@@ -242,21 +279,22 @@ export default function ReservationList({
                       </div>
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-black ${
-                        isExpired ? 'bg-red-100 text-red-700' :
-                        isNearExpiry ? 'bg-orange-100 text-orange-700 animate-pulse' :
-                        'bg-blue-50 text-blue-700'
-                      }`}>
-                        <Clock className="w-3.5 h-3.5" />
-                        <span>{isExpired ? 'หมดอายุ' : `${daysRemaining} วัน`}</span>
+                      <div className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-black ${expiryDisplay.badgeClass}`}>
+                        <Clock className="w-3.5 h-3.5" aria-hidden="true" />
+                        <span>{expiryDisplay.label}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-2 text-slate-600">
-                        <Calendar className="w-4 h-4 text-slate-400" />
-                        <span className="text-sm font-medium">
-                          {format(new Date(res.expirationDate), "d MMM yy", { locale: th })}
-                        </span>
+                      <div className="flex items-start gap-2 text-slate-600">
+                        <Calendar className="mt-0.5 w-4 h-4 shrink-0 text-slate-400" aria-hidden="true" />
+                        <div className="flex flex-col">
+                          <span className="text-sm font-bold text-slate-700">
+                            {format(new Date(res.expirationDate), "d MMM yy · HH:mm น.", { locale: th })}
+                          </span>
+                          {expiryDisplay.daysRemaining === 0 && (
+                            <span className="text-xs font-medium text-orange-700">หมดอายุวันนี้</span>
+                          )}
+                        </div>
                       </div>
                     </td>
                     {isAdmin && (
